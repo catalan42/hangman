@@ -11,8 +11,8 @@
     (str seqName "("  (count seqVals) ") " )
       (take 5 (map #(str \" % \") seqVals) ) ))
 
-(defn find-words-len
-  "Finds words of a certain length from a sequence"
+(defn words-of-len
+  "Finds words from a sequence with the specified length "
   [word-seq target-len]
   (filter #(= target-len (count %)) word-seq) )
 
@@ -25,11 +25,20 @@
      _       (show-info words "words")
      max-len (apply max (map #(count %) words) ) 
      _  (println "max-len:" max-len)
-     _  (doall 
-          (for [ curr-len (range 1 (inc max-len)) ]
-            (let [ curr-words (find-words-len words curr-len) ]
+     _  (do 
+          (println "for loop:")
+          (doall (for [ curr-len (range 1 (inc max-len)) ]
+            (let [ curr-words (words-of-len words curr-len) ]
               (show-info curr-words (str "len=" curr-len) )
-            )))
+            )) )
+          (println "leaving doall #1")
+          )
+     map-by-size  (group-by count words)
+     _   (println "map-by-size:")
+     _   (doall (for [ curr-len (range 1 (inc max-len)) ]
+             (let [ curr-words   (get map-by-size curr-len [] ) ]
+              (show-info curr-words (str "len=" curr-len) ) )
+           ))
      ] 
   )
 )
