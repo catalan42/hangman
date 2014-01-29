@@ -20,16 +20,15 @@
   (println "Hello, World!")
   (let [ words   (->> (slurp"resources/words.txt")
                       (str/split-lines )
-                      (map str/trim ) ) 
+                      (map str/trim ) )
          _       (show-info words "words")
-         len1    (find-words-len words 1 ) 
-         _       (show-info len1 "len1")
-         len2    (find-words-len words 2 ) 
-         _       (show-info len2 "len2")
-         len3    (find-words-len words 3 ) 
-         _       (show-info len3 "len3")
          max-len (apply max (map #(count %) words) ) 
          _  (println "max-len:" max-len)
+         _  (doall 
+              (for [ curr-len (range 1 (inc max-len)) ]
+                (let [ curr-words (find-words-len words curr-len) ]
+                  (show-info curr-words 
+                   (str "len=" curr-len) ) )))
        ] 
   )
 )
