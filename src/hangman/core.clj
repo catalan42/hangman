@@ -18,17 +18,18 @@
 
 (defn main []
   (println "Hello, World!")
-  (let [ words   (->> (slurp"resources/words.txt")
-                      (str/split-lines )
-                      (map str/trim ) )
-         _       (show-info words "words")
-         max-len (apply max (map #(count %) words) ) 
-         _  (println "max-len:" max-len)
-         _  (doall 
-              (for [ curr-len (range 1 (inc max-len)) ]
-                (let [ curr-words (find-words-len words curr-len) ]
-                  (show-info curr-words 
-                   (str "len=" curr-len) ) )))
-       ] 
+  (let [ 
+     words   (->> (slurp"resources/words.txt")
+                  (str/split-lines )
+                  (map str/trim ) )
+     _       (show-info words "words")
+     max-len (apply max (map #(count %) words) ) 
+     _  (println "max-len:" max-len)
+     _  (doall 
+          (for [ curr-len (range 1 (inc max-len)) ]
+            (let [ curr-words (find-words-len words curr-len) ]
+              (show-info curr-words (str "len=" curr-len) )
+            )))
+     ] 
   )
 )
