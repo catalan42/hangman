@@ -16,29 +16,21 @@
   [word-seq target-len]
   (filter #(= target-len (count %)) word-seq) )
 
+(def all-words   
+  (->> (slurp"resources/words.txt")
+       (str/split-lines )
+       (map str/trim ) ))
+
 (defn main []
-  (println "Hello, World!")
+  (println "main: enter")
+  (show-info all-words "all-words")
   (let [ 
-     words   (->> (slurp"resources/words.txt")
-                  (str/split-lines )
-                  (map str/trim ) )
-     _       (show-info words "words")
-     max-len (apply max (map #(count %) words) ) 
-     _  (println "max-len:" max-len)
-     _  (do 
-          (println "for loop:")
-          (doall (for [ curr-len (range 1 (inc max-len)) ]
-            (let [ curr-words (words-of-len words curr-len) ]
-              (show-info curr-words (str "len=" curr-len) )
-            )) )
-          (println "leaving doall #1")
-          )
-     map-by-size  (group-by count words)
-     _   (println "map-by-size:")
-     _   (doall (for [ curr-len (range 1 (inc max-len)) ]
-             (let [ curr-words   (get map-by-size curr-len [] ) ]
-              (show-info curr-words (str "len=" curr-len) ) )
-           ))
-     ] 
-  )
-)
+    max-len (apply max (map #(count %) all-words) ) 
+    map-by-size  (group-by count all-words)
+    ] 
+    (println "map-by-size:")
+    (doseq [ curr-len (range 1 (inc max-len)) ]
+      (let [ curr-words   (get map-by-size curr-len [] ) ]
+        (show-info curr-words (str "len=" curr-len) ) )
+    )
+  ))
