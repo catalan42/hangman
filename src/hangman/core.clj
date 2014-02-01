@@ -125,12 +125,12 @@
 )
 
 
-(defn main []
+(defn main [word-seq]
   (println "main: enter")
   (run-tests)
-  (show-info tst-words "tst-words")
-  (doseq [ curr-len    (range 1 (inc (max-word-length tst-words)) ) ]
-    (show-info (words-of-length tst-words curr-len) (str "len=" curr-len) ) )
+  (show-info word-seq "ALL")
+  (doseq [ curr-len    (range 1 (inc (max-word-length word-seq)) ) ]
+    (show-info (words-of-length word-seq curr-len) (str "len=" curr-len) ) )
 )
 
 (defonce sanity-check (run-tests) )
