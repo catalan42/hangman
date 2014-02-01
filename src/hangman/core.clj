@@ -24,16 +24,16 @@
   "cat" "car" "can" "cob" "con" "cop" "cup" 
   "work" "love" "hate" "jobs" "able" "ball" ] )
 
+(defn max-word-length 
+  "The maximum length of any word in a sequence."
+  [word-seq]
+  (apply max (map count word-seq) ))
+
 (defn words-by-length  
   "Maps word length to word values.  Each key is a word length. Each value is a collection
   of all words of that length.  Keys are absent if no words of that length are present."
   [word-seq]
   (group-by count word-seq) )
-
-(defn max-word-length 
-  "The maximum length of any word in a sequence."
-  [word-seq]
-  (apply max (map count word-seq) ))
 
 (defn to-word-array 
   "Returns all words of the specified length as a 2D array (vector of vectors).
@@ -128,9 +128,9 @@
 (defn main []
   (println "main: enter")
   (run-tests)
-  (show-info all-words "all-words")
-  (doseq [ curr-len    (range 1 (inc max-word-length)) ]
-    (show-info (words-of-length curr-len) (str "len=" curr-len) ) )
+  (show-info tst-words "tst-words")
+  (doseq [ curr-len    (range 1 (inc (max-word-length tst-words)) ) ]
+    (show-info (words-of-length tst-words curr-len) (str "len=" curr-len) ) )
 )
 
 (defonce sanity-check (run-tests) )
