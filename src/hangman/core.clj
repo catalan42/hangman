@@ -44,6 +44,14 @@
   (vec
     (map vec ((words-by-length word-seq) word-length)) ))
 
+(defn words-of-length 
+  "Returns a seq of words of the specified length."
+  [word-seq word-length]
+  { :pre  [ (integer? word-length) ]
+    :post [ (vector? %) ] }
+  (vec
+    (get (words-by-length word-seq) word-length [] ) ))
+
 (defn num-rows
   "Given a 2D array (vector of vectors), return the number of rows (1st dimension)."
   [word-array]
@@ -75,14 +83,6 @@
   { :pre  [ (integer? row-idx) ]
     :post [ (vector? %) ] }
   (word-array row-idx) )
-
-(defn words-of-length 
-  "Returns a seq of words of the specified length."
-  [word-length]
-  { :pre  [ (integer? word-length) ]
-    :post [ (vector? %) ] }
-  (vec
-    (get words-by-length word-length [] ) ))
 
 (defn freqs-by-col
   "For each column of a 2D array, computes an element frequency map. Returns as 
