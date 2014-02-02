@@ -4,12 +4,14 @@
   ) )
 
 
+(def show-info-size 10)
+
 (defn show-info 
   "Print synopsis info about a sequence of strings"
   [ seqVals seqName ]
   (println 
     (str seqName "("  (count seqVals) ") " )
-      (take 5 (map #(str \" % \") seqVals) ) ))
+        (take show-info-size (map #(str \" % \") seqVals)) ))
 
 (def all-words   
   "A collection of all words for the hangman game."
@@ -26,8 +28,10 @@
 
 (defn max-word-length 
   "The maximum length of any word in a sequence."
-  [word-seq]
-  (apply max (map count word-seq) ))
+  [words-map]
+  { :pre  [ (map? words-map) ]
+    :post [ (integer? %) ] }
+  (apply max (keys words-map) ))
 
 (defn words-by-length  
   "Maps word length to word values.  Each key is a word length. Each value is a collection
@@ -38,19 +42,18 @@
 (defn to-word-array 
   "Returns all words of the specified length as a 2D array (vector of vectors).
   First index selects a given word, 2nd index selects chars from that word."
-  [word-seq word-length]
-  { :pre  [ (integer? word-length) ]
+  [word-seq]
+  { :pre  []
     :post [ (vector? %) ] }
   (vec
-    (map vec ((words-by-length word-seq) word-length)) ))
+    (map vec word-seq) ))
 
 (defn words-of-length 
-  "Returns a seq of words of the specified length."
-  [word-seq word-length]
-  { :pre  [ (integer? word-length) ]
+  "Returns a vector of words of the specified length."
+  [words-map length]
+  { :pre  [ (integer? length) ]
     :post [ (vector? %) ] }
-  (vec
-    (get (words-by-length word-seq) word-length [] ) ))
+  (vec (get words-map length []) ))
 
 (defn num-rows
   "Given a 2D array (vector of vectors), return the number of rows (1st dimension)."
@@ -125,12 +128,17 @@
 )
 
 
-(defn main [word-seq]
-  (println "main: enter")
-  (run-tests)
-  (show-info word-seq "ALL")
-  (doseq [ curr-len    (range 1 (inc (max-word-length word-seq)) ) ]
-    (show-info (words-of-length word-seq curr-len) (str "len=" curr-len) ) )
+(defn main 
+  ( [] (main tst-words) )
+  ( [word-seq]
+      (let [words-map     (words-by-length word-seq)
+            max-word-len  (apply max (keys words-map) )
+            word-array    (to-word-array (words-map 2)) ]
+        (run-tests)
+        (show-info word-seq "ALL")
+        (doseq [ curr-len (sort (keys words-map)) ]
+          (show-info (words-of-length words-map curr-len) (str "len=" curr-len) ) ))
+  )
 )
 
 (defonce sanity-check (run-tests) )
