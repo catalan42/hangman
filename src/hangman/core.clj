@@ -26,13 +26,6 @@
   "cat" "car" "can" "cob" "con" "cop" "cup" 
   "work" "love" "hate" "jobs" "able" "ball" ] )
 
-(defn max-word-length 
-  "The maximum length of any word in a sequence."
-  [words-map]
-  { :pre  [ (map? words-map) ]
-    :post [ (integer? %) ] }
-  (apply max (keys words-map) ))
-
 (defn words-by-length  
   "Maps word length to word values.  Each key is a word length. Each value is a collection
   of all words of that length.  Keys are absent if no words of that length are present."
@@ -48,13 +41,6 @@
   (vec
     (map vec word-seq) ))
 
-(defn words-of-length 
-  "Returns a vector of words of the specified length."
-  [words-map length]
-  { :pre  [ (integer? length) ]
-    :post [ (vector? %) ] }
-  (vec (get words-map length []) ))
-
 (defn num-rows
   "Given a 2D array (vector of vectors), return the number of rows (1st dimension)."
   [word-array]
@@ -65,8 +51,9 @@
 (defn num-cols
   "Given a 2D array (vector of vectors), return the number of columns (2nd dimension)."
   [word-array]
-  { :pre  [ (vector?  word-array) 
-            (vector? (word-array 0)) ]
+  { :pre  [ ;(vector?  word-array) 
+            ;(vector? (word-array 0)) 
+            ]
     :post [] }
   (count (word-array 0)) )
 
@@ -74,7 +61,7 @@
   "Given a 2D array (vector of vectors), return a vector of elements 
   from the specified column."
   [word-array col-idx]
-  { :pre  [ (integer? col-idx) ]
+  { :pre  [ (vector? word-array) (integer? col-idx) ]
     :post [ (vector? %) ] }
   (reduce #(conj %1 (%2 col-idx))
           [] word-array ) )
@@ -95,9 +82,12 @@
             (< 0 (num-rows word-array) )
             (< 0 (num-cols word-array) ) ] 
     :post [ (vector? %) ] }
+  (println "word-array:" word-array)
   (vec
-    (for [idx (range 0 (inc (num-cols word-array) )) ]
-      (frequencies (get-array-col idx)) )))
+    (for [idx (range 0 (num-cols word-array)) ]
+      (let [curr-col (get-array-col word-array idx)]
+        (println "idx=" idx "  curr-col:" curr-col)
+        (frequencies curr-col)) )))
 
 
 (defn run-tests []
@@ -133,13 +123,19 @@
   ( [word-seq]
       (let [words-map     (words-by-length word-seq)
             max-word-len  (apply max (keys words-map) )
-            word-array    (to-word-array (words-map 2)) ]
+            ]
         (run-tests)
         (show-info word-seq "ALL")
         (doseq [ curr-len (sort (keys words-map)) ]
-          (show-info (words-of-length words-map curr-len) (str "len=" curr-len) ) ))
+          (println)
+          (let [ curr-words  (words-map curr-len) 
+                 word-array  (to-word-array  curr-words) ]
+            (show-info curr-words (str "len=" curr-len) )
+            (println "freqs-by-col:" (freqs-by-col word-array)) 
+          ))
+      )
   )
 )
+(defn -main [& args] (apply main args) )
 
 (defonce sanity-check (run-tests) )
-
