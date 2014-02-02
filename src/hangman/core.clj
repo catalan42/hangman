@@ -27,7 +27,7 @@
   "cat" "car" "can" "cob" "con" "cop" "cup" 
   "work" "love" "hate" "jobs" "able" "ball" ] )
 
-(defn words-by-length  
+(defn to-words-by-length  
   "Maps word length to word values.  Each key is a word length. Each value is a collection
   of all words of that length.  Keys are absent if no words of that length are present."
   [word-seq]
@@ -67,7 +67,7 @@
     :post [ (vector? %) ] }
   (word-array row-idx) )
 
-(defn freqs-by-col
+(defn to-freqs-by-col
   "For each column of a 2D array, computes an element frequency map. Returns as 
   a vector indexed by column."
   [word-array]
@@ -114,7 +114,9 @@
   correctly guessed letters, and nil shows chars not yet guessed.  "
   [clue-vec col-char-freqs used-chars]
   (let [all-char-freqs    (apply merge-with + col-char-freqs)
+          ; _ (println "all-char-freqs" all-char-freqs )
         avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
+          _ (println "avail-chars" avail-chars )
         max-avail-char    (apply max-key all-char-freqs avail-chars ) 
   ] max-avail-char ) )
 
@@ -165,7 +167,7 @@
 
   (let [
     tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-    words-map           (words-by-length tst-words)
+    words-map           (to-words-by-length tst-words)
       _ (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
 
     curr-len            4
@@ -173,7 +175,7 @@
       _ (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
       _ (println "curr-words:" curr-words)
     word-array          (to-word-array  curr-words)
-    col-char-freqs      (freqs-by-col word-array)
+    col-char-freqs      (to-freqs-by-col word-array)
       _ (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
 
     all-char-freqs      (apply merge-with + col-char-freqs)
@@ -182,7 +184,7 @@
     max-freq-val        (apply max-key all-char-freqs (keys all-char-freqs) )
       _ (assert (= max-freq-val \x ))
 
-    tgt-word         [ \x  \b  \c  \d  ]
+    tgt-word            [ \x  \b  \c  \d  ]
     old-clue            [ nil \b  nil nil ]
 
     keepFlg             (map #(nil? %) old-clue )   
@@ -207,26 +209,50 @@
 )
 
 (defn main 
-  ( [] (main tst-words) )
+  ( [] 
+    (main tst-words) )
   ( [word-seq]
-      (do-tests)
+    (do-tests)
+    (println "----------------------------------------")
+    (def tgt-word         "hate")
+    (def words-map        (to-words-by-length word-seq) )
+    (def curr-len         (count tgt-word) )
+    (def curr-words       (words-map curr-len) )
+    (def word-array       (to-word-array  curr-words) )
+    (def max-word-len     (apply max (keys words-map)) )
+    (def col-char-freqs   (to-freqs-by-col word-array) )
+
+    (show-info word-seq "ALL")
+    (doseq [ curr-len (sort (keys words-map)) ]
+      (println)
+      (let [ 
+        curr-words       (words-map curr-len)
+         _ (show-info curr-words (str "len=" curr-len) )
+         col-char-freqs (to-freqs-by-col word-array)
+         _ (println "col-char-freqs" col-char-freqs)
+         all-char-freqs (apply merge-with + col-char-freqs)
+         _ (println "all-char-freqs" all-char-freqs)
+      ] ))
+
+    (loop [ guessed-chars  #{}
+            clue           (make-clue tgt-word guessed-chars) 
+          ]
       (println "----------------------------------------")
-      (let [words-map     (words-by-length word-seq)
-            max-word-len  (apply max (keys words-map) )
-            ]
-        (show-info word-seq "ALL")
-        (doseq [ curr-len (sort (keys words-map)) ]
-          (println)
-          (let [ curr-words  (words-map curr-len)
-                 word-array  (to-word-array  curr-words)
-                 _ (show-info curr-words (str "len=" curr-len) )
-                 col-char-freqs (freqs-by-col word-array)
-                 _ (println "freqs-by-col:" col-char-freqs)
-                 all-char-freqs (apply merge-with + col-char-freqs)
-                 _ (println "all-char-freqs" all-char-freqs)
-          ] )
-        )
-      )
+      (println "guessed-chars (" 
+         (count guessed-chars) ")" 
+                guessed-chars)
+      (println "clue" clue)
+      (let [
+        new-guess       (make-guess clue col-char-freqs guessed-chars)
+          _ (println "new-guess" new-guess)
+        guessed-chars   (conj guessed-chars new-guess)
+          _ (println "guessed-chars" guessed-chars)
+        new-clue        (make-clue tgt-word guessed-chars)
+          _ (println "new-clue" new-clue)
+      ]
+        (when (some nil? new-clue)
+          (recur  (conj guessed-chars new-guess)  new-clue ) )
+      ))
   )
 )
 (defn -main [& args] (apply main args) )
