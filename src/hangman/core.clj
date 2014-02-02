@@ -93,18 +93,17 @@
   (let [ both-seq     (map vector pred-seq data-seq )
          filt-seq     (filter #(% 0) both-seq)
          result       (vec (map second filt-seq)) ]
-    (println "both-seq"   both-seq)
-    (println "filt-seq"   filt-seq)
-    (println "result"     result)
     result
   ) )
-(def data-vec (range 5))
-(def pred-vec [ true false true false true nil false true ])
-(filter-with pred-vec data-vec )
 
 (defn run-tests []
   (println "----------------------------------------")
   (println "Tests:")
+
+  ; Filtering one sequence with another
+  (let [pred-vals  [ true false true nil true nil false true ] ]
+    (assert (= (filter-with pred-vals (range 5)) [0 2 4  ] ))
+    (assert (= (filter-with pred-vals (range 8)) [0 2 4 7] )) )
 
   ; Manipulation of strings/vectors/character seq's
   (assert (= (vec "abcd")                [\a \b \c \d] ))
