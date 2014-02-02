@@ -87,17 +87,6 @@
       (let [curr-col (get-array-col word-array idx)]
         (frequencies curr-col)) )))
 
-(defn filter-with-seq
-  "Returns values from data-seq where corresponding pred-seq elements are truthy.
-  An alternate, sequence-based implementation"
-  [pred-seq data-seq]
-  (let [ both-seq     (map vector pred-seq data-seq )
-         filt-seq     (filter #(% 0) both-seq)
-         filt-data    (map second filt-seq) 
-         result       (vec filt-data) ]
-    result
-  ) )
-
 (defn filter-with-idx
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
   An indexed-based implementation."
@@ -110,6 +99,17 @@
                     (if (pred-vec idx) (data-vec idx) ))
         filt-seq  (keep-indexed filt-fn data-vec)
         result    (vec filt-seq) ]
+    result
+  ) )
+
+(defn filter-with-seq
+  "Returns values from data-seq where corresponding pred-seq elements are truthy.
+  A sequence-based implementation"
+  [pred-seq data-seq]
+  (let [ both-seq     (map vector pred-seq data-seq )
+         filt-seq     (filter #(% 0) both-seq)
+         filt-data    (map second filt-seq) 
+         result       (vec filt-data) ]
     result
   ) )
 
@@ -190,13 +190,13 @@
         word-array  (to-word-array  curr-words)
         col-char-freqs (freqs-by-col word-array)
         all-char-freqs (apply merge-with + col-char-freqs)
-        most-pair (reduce #(if (< (second %1) (second %2) )  %2 %1 )
-                    (seq all-char-freqs) )
-          _ (println "most-pair:" most-pair)
-        max-freq-val (first most-pair)
+          _ (println "all-char-freqs" all-char-freqs)
+
+        max-freq-val (apply max-key all-char-freqs (keys all-char-freqs) )
           _ (println "max-freq-val" max-freq-val)
-        wordVec    [\x \x \c \d]
-        guessVec   [nil \b nil nil]
+
+        wordVec    [ \x  \x  \c  \d  ]
+        guessVec   [ nil \b  nil nil ]
         keepFlg    (map #(nil? %) guessVec )   
           _ (println "keepFlg" keepFlg)
         keepFreqs  (filter-with keepFlg col-char-freqs)
