@@ -256,7 +256,7 @@
          _ (println "all-char-freqs" all-char-freqs)
       ] ))
 
-(comment
+;(comment
     (loop [ guessed-chars  #{}
             clue           (make-clue tgt-word guessed-chars) 
           ]
@@ -282,7 +282,7 @@
         (when (some nil? new-clue)
           (recur  (conj guessed-chars new-guess)  new-clue ) )
       ))
-)
+;)
 
   )
 )
