@@ -145,14 +145,17 @@
   [clue-vec col-char-freqs used-chars]
   (let [
     all-char-freqs  (apply merge-with + col-char-freqs)
-      _ (println "all-char-freqs" all-char-freqs)
     avail-chars     (set/difference (set(keys all-char-freqs)) used-chars)
-      _ (println "avail-chars" avail-chars)
     max-avail-char  (apply max-key all-char-freqs avail-chars ) ]
-      _ (println "max-avail-char" max-avail-char)
     max-avail-char     
   )
 )
+
+(defn score-guess
+  "Generate a clue given the target word and a vec of guessed letters."
+  [target-vec guesses-set]
+  (vec (for [ letter (target) ]
+          (guesses-set letter)) ))
 
 (defn run-tests []
   (println "----------------------------------------")
@@ -221,7 +224,7 @@
     max-freq-val        (apply max-key all-char-freqs (keys all-char-freqs) )
       _ (assert (= max-freq-val \x ))
 
-    wordVec             [ \x  \x  \c  \d  ]
+    target              [ \x  \b  \c  \d  ]
     clue-vec            [ nil \b  nil nil ]
     keepFlg             (map #(nil? %) clue-vec )   
       _ (println "keepFlg" keepFlg)
