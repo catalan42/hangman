@@ -82,15 +82,30 @@
             (< 0 (num-rows word-array) )
             (< 0 (num-cols word-array) ) ] 
     :post [ (vector? %) ] }
-  (println "word-array:" word-array)
   (vec
     (for [idx (range 0 (num-cols word-array)) ]
       (let [curr-col (get-array-col word-array idx)]
-        (println "idx=" idx "  curr-col:" curr-col)
         (frequencies curr-col)) )))
 
+(defn filter-with 
+  "Returns values from data-seq where corresponding pred-seq elements are truthy."
+  [pred-seq data-seq]
+  (let [ both-seq     (map vector pred-seq data-seq )
+         filt-seq     (filter #(% 0) both-seq)
+         result       (vec (map second filt-seq)) ]
+    (println "both-seq"   both-seq)
+    (println "filt-seq"   filt-seq)
+    (println "result"     result)
+    result
+  ) )
+(def data-vec (range 5))
+(def pred-vec [ true false true false true nil false true ])
+(filter-with pred-vec data-vec )
 
 (defn run-tests []
+  (println "----------------------------------------")
+  (println "Tests:")
+
   ; Manipulation of strings/vectors/character seq's
   (assert (= (vec "abcd")                [\a \b \c \d] ))
   (assert (= (str/join  (vec "abcd"))    "abcd" ))
@@ -106,25 +121,6 @@
     (assert (= (get-array-col tstArr 2) [:c  3 \c] ))
   )
 
-  ; Test frequency function
-  (println "----------------------------------------")
-  (println "Tests:")
-  (let [tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-        words-map (words-by-length tst-words)
-        _ (println words-map) ]
-        (doseq [ curr-len (sort (keys words-map)) ]
-          (println)
-          (let [curr-words  (words-map curr-len)
-                word-array  (to-word-array  curr-words)
-                _ (show-info curr-words (str "len=" curr-len) )
-                col-char-freqs (freqs-by-col word-array)
-                _ (println "freqs-by-col:" col-char-freqs)
-                all-char-freqs (apply merge-with + col-char-freqs)
-                _ (println "all-char-freqs" all-char-freqs)
-               ] )
-        ))
-  (println)
-
   ; Use of (frequencies...) and (merge-with...)
   (assert (= (frequencies "abbccc")          
              {\a 1, \b 2, \c 3} ))
@@ -134,6 +130,24 @@
              [ {\a 1, \b 1, \c 1} {\b 1, \c 1} {\c 1} ] ))
   (assert (= (apply merge-with + (map frequencies ["abc" "bc" "c"]) )
              {\a 1 \b 2 \c 3} ))
+
+  ; Test frequency function
+  (let [tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
+        words-map (words-by-length tst-words)
+        curr-len  4
+        curr-words  (words-map curr-len)
+        word-array  (to-word-array  curr-words)
+        col-char-freqs (freqs-by-col word-array)
+        all-char-freqs (apply merge-with + col-char-freqs)
+       ]
+    (println curr-words)
+    (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
+    (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
+    (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
+    (assert (= all-char-freqs {\d 4, \c 3, \b 2, \a 1, \x 6} )) 
+  )
+
+  (println)
 )
 
 
