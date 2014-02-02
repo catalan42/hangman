@@ -182,6 +182,13 @@
   (assert (= (apply merge-with + (map frequencies ["abc" "bc" "c"]) )
              {\a 1 \b 2 \c 3} ))
 
+  ; Match guesses
+  (println "match guesses" )
+  (assert (guess-matches? "abcd" "abcd") )
+  (assert (guess-matches? "abcd" [\a \b \c \d]) )
+  (assert (guess-matches? "abcd" [nil nil nil nil]) )
+  (assert (guess-matches? "abcd" [\a nil nil nil]) )
+
   (let [
     tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
     words-map           (to-words-by-length tst-words)
@@ -192,35 +199,33 @@
       _ (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
       _ (println "curr-words:" curr-words)
     word-array          (to-word-array  curr-words)
+      _ (println "word-array" word-array)
+
     col-char-freqs      (to-freqs-by-col word-array)
       _ (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
-
     all-char-freqs      (apply merge-with + col-char-freqs)
       _ (assert (= all-char-freqs { \a 1, \b 2, \c 3, \d 4, \x 6} )) 
-
     max-freq-val        (apply max-key all-char-freqs (keys all-char-freqs) )
       _ (assert (= max-freq-val \x ))
 
     tgt-word            [ \x  \b  \c  \d  ]
-    old-clue            [ nil \b  nil nil ]
+    clue                [ nil \b  nil nil ]
 
-    keepFlg             (map #(nil? %) old-clue )   
-      _ (println "keepFlg" keepFlg)
-    keepFreqs           (filter-with keepFlg col-char-freqs)
-      _ (println "keepFreqs" keepFreqs)
-    keepWords           (filter-with keepFlg curr-words)
-      _ (println "keepWords" keepWords)
+    keep-flag           (map #(guess-matches? % clue ) word-array )
+      _ (println "keep-flag" keep-flag)
+    keep-words          (filter-with keep-flag curr-words)
+      _ (println "keep-words" keep-words)
 
     guessed-chars       #{ \b }
       _ (println "guessed-chars" guessed-chars)
-    new-guess           (make-guess old-clue col-char-freqs guessed-chars)
+    new-guess           (make-guess clue col-char-freqs guessed-chars)
       _ (println "new-guess" new-guess)
     guessed-chars       (conj guessed-chars new-guess)
       _ (println "guessed-chars" guessed-chars)
 
     new-clue            (make-clue tgt-word guessed-chars)
       _ (println "tgt-word" tgt-word)
-      _ (println "old-clue" old-clue)
+      _ (println "clue"     clue)
       _ (println "new-clue" new-clue)
   ] )
 )
@@ -251,6 +256,7 @@
          _ (println "all-char-freqs" all-char-freqs)
       ] ))
 
+(comment
     (loop [ guessed-chars  #{}
             clue           (make-clue tgt-word guessed-chars) 
           ]
@@ -260,6 +266,12 @@
                 guessed-chars)
       (println "clue" clue)
       (let [
+        keep-flag       (map #(guess-matches? % clue ) word-array )
+          _ (println "keep-flag" keep-flag)
+        keep-words      (filter-with keep-flag curr-words)
+          _ (println "keep-words" keep-words)
+        col-char-freqs   (to-freqs-by-col keep-words)
+
         new-guess       (make-guess clue col-char-freqs guessed-chars)
           _ (println "new-guess" new-guess)
         guessed-chars   (conj guessed-chars new-guess)
@@ -270,6 +282,8 @@
         (when (some nil? new-clue)
           (recur  (conj guessed-chars new-guess)  new-clue ) )
       ))
+)
+
   )
 )
 (defn -main [& args] (apply main args) )
