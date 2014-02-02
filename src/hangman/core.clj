@@ -151,11 +151,13 @@
   )
 )
 
-(defn score-guess
+(defn make-clue
   "Generate a clue given the target word and a vec of guessed letters."
   [target-vec guesses-set]
-  (vec (for [ letter (target) ]
-          (guesses-set letter)) ))
+  (println "target-vec" target-vec)
+  (println "guesses-set" guesses-set)
+  (vec 
+    (for [ letter target-vec ] (guesses-set letter)) ))
 
 (defn run-tests []
   (println "----------------------------------------")
@@ -224,7 +226,7 @@
     max-freq-val        (apply max-key all-char-freqs (keys all-char-freqs) )
       _ (assert (= max-freq-val \x ))
 
-    target              [ \x  \b  \c  \d  ]
+    target-word         [ \x  \b  \c  \d  ]
     clue-vec            [ nil \b  nil nil ]
     keepFlg             (map #(nil? %) clue-vec )   
       _ (println "keepFlg" keepFlg)
@@ -233,9 +235,11 @@
     keepWords           (filter-with keepFlg curr-words)
       _ (println "keepWords" keepWords)
 
-    used-chars #{ \b }
-    guess               (make-guess clue-vec col-char-freqs used-chars)
-      _ (println "guess" guess)
+    guessed-chars       #{ \b \c }
+    new-guess           (make-guess clue-vec col-char-freqs guessed-chars)
+      _ (println "new-guess" new-guess)
+    new-clue            (make-clue target-word guessed-chars)
+      _ (println "new-clue" new-clue)
 
   ]
   )
