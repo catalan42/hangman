@@ -163,7 +163,6 @@
   (assert (= (apply merge-with + (map frequencies ["abc" "bc" "c"]) )
              {\a 1 \b 2 \c 3} ))
 
-  ; Test frequency function
   (let [
     tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
     words-map           (words-by-length tst-words)
