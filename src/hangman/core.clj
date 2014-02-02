@@ -109,12 +109,20 @@
   ; Test frequency function
   (println "----------------------------------------")
   (println "Tests:")
-  (let [ 
-    tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-    words-map (words-by-length tst-words)
-    _ (println words-map)
-  ]
-  )
+  (let [tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
+        words-map (words-by-length tst-words)
+        _ (println words-map) ]
+        (doseq [ curr-len (sort (keys words-map)) ]
+          (println)
+          (let [curr-words  (words-map curr-len)
+                word-array  (to-word-array  curr-words)
+                _ (show-info curr-words (str "len=" curr-len) )
+                col-char-freqs (freqs-by-col word-array)
+                _ (println "freqs-by-col:" col-char-freqs)
+                all-char-freqs (apply merge-with + col-char-freqs)
+                _ (println "all-char-freqs" all-char-freqs)
+               ] )
+        ))
   (println)
 
   ; Use of (frequencies...) and (merge-with...)
