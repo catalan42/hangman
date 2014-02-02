@@ -109,6 +109,22 @@
     :post [ (vector? %) ] }
   (filter-with-seq pred-seq data-seq) )
 
+
+(defn guess-matches?
+  "Returns true if a guess matches the target word. The target word is a vector of
+  characters.  The guess value is a vector of the same length with elements that are
+  either a character or nil, where nil indicates a wildcard that matches any character in
+  the target word."
+  [word guess]
+  { :pre  [ (= (count word) (count guess)) 
+            (not-any? nil? word) ]
+    :post [] }
+  (let [ pair-seq   (map vector guess word)
+         result     (every? #(or (=    (first %) (second %))
+                                 (nil? (first %)) )
+                      pair-seq) ]
+    result ))
+
 (defn make-guess
   "Generate the next guess char. clue-vec consists of chars or nil, where a char shows
   correctly guessed letters, and nil shows chars not yet guessed.  "
