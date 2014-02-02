@@ -97,20 +97,18 @@
         pred-vec  (vec pred-seq)
         filt-fn   (fn [idx data-val] 
                     (if (pred-vec idx) (data-vec idx) ))
-        filt-seq  (keep-indexed filt-fn data-vec)
-        result    (vec filt-seq) ]
-    result
+        filt-seq  (keep-indexed filt-fn data-vec) ]
+    (vec filt-seq)
   ) )
 
 (defn filter-with-seq
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
   A sequence-based implementation"
   [pred-seq data-seq]
-  (let [ both-seq     (map vector pred-seq data-seq )
-         filt-seq     (filter #(% 0) both-seq)
-         filt-data    (map second filt-seq) 
-         result       (vec filt-data) ]
-    result
+  (let [ pair-seq     (map vector pred-seq data-seq )
+         filt-seq     (filter #(% 0) pair-seq)
+         filt-data    (map second filt-seq) ]
+    (vec filt-data)
   ) )
 
 (defn filter-with 
