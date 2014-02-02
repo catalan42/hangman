@@ -87,12 +87,27 @@
       (let [curr-col (get-array-col word-array idx)]
         (frequencies curr-col)) )))
 
-(defn filter-with 
-  "Returns values from data-seq where corresponding pred-seq elements are truthy."
+(defn filter-with-seq
+  "Returns values from data-seq where corresponding pred-seq elements are truthy.
+  An alternate, sequence-based implementation"
   [pred-seq data-seq]
   (let [ both-seq     (map vector pred-seq data-seq )
          filt-seq     (filter #(% 0) both-seq)
          result       (vec (map second filt-seq)) ]
+    result
+  ) )
+
+(defn filter-with 
+  "Returns values from data-seq where corresponding pred-seq elements are truthy."
+  [pred-seq data-seq]
+  { :pre  [ (= (count pred-seq) (count data-seq)) ] 
+    :post [ (vector? %) ] }
+  (let [data-vec  (vec data-seq)
+        pred-vec  (vec pred-seq)
+        filt-fn   (fn [idx data-val] 
+                    (if (pred-vec idx) (data-vec idx) ))
+        filt-seq  (keep-indexed filt-fn data-vec)
+        result    (vec filt-seq) ]
     result
   ) )
 
@@ -101,9 +116,15 @@
   (println "Tests:")
 
   ; Filtering one sequence with another
-  (let [pred-vals  [ true false true nil true nil false true ] ]
-    (assert (= (filter-with pred-vals (range 5)) [0 2 4  ] ))
-    (assert (= (filter-with pred-vals (range 8)) [0 2 4 7] )) )
+  (let [
+    pred-vals5  [ true false 5 nil :a ] 
+    pred-vals8  [ true false true nil true nil false true ] 
+  ]
+    (assert (= (filter-with     pred-vals5 (range 5)) [0 2 4  ] ))
+    (assert (= (filter-with     pred-vals8 (range 8)) [0 2 4 7] )) 
+    (assert (= (filter-with-seq pred-vals8 (range 5)) [0 2 4  ] ))
+    (assert (= (filter-with-seq pred-vals8 (range 8)) [0 2 4 7] )) 
+    )
 
   ; Manipulation of strings/vectors/character seq's
   (assert (= (vec "abcd")                [\a \b \c \d] ))
@@ -141,6 +162,12 @@
         most-pair (reduce #(if (< (second %1) (second %2) )  %2 %1 )
                     (seq all-char-freqs) )
         max-freq-val (first most-pair)
+        wordVec    [\x \x \c \d]
+        guessVec   [nil nil nil nil]
+        keepFlg    (map #(nil? %) guessVec )   
+          _ (println "keepFlg" keepFlg)
+        keepFreqs  (filter-with keepFlg col-char-freqs)
+          _ (println "keepFreqs" keepFreqs)
        ]
     (println "curr-words:" curr-words)
     (println "most-pair:" most-pair)
