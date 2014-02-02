@@ -113,11 +113,12 @@
   "Generate the next guess char. clue-vec consists of chars or nil, where a char shows
   correctly guessed letters, and nil shows chars not yet guessed.  "
   [clue-vec col-char-freqs used-chars]
-  (let [all-char-freqs    (apply merge-with + col-char-freqs)
-          ; _ (println "all-char-freqs" all-char-freqs )
-        avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
-          _ (println "avail-chars" avail-chars )
-        max-avail-char    (apply max-key all-char-freqs avail-chars ) 
+  (let [
+    all-char-freqs    (apply merge-with + col-char-freqs)
+      ; _ (println "all-char-freqs" all-char-freqs )
+    avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
+      _ (println "avail-chars" avail-chars )
+    max-avail-char    (apply max-key all-char-freqs avail-chars ) 
   ] max-avail-char ) )
 
 (defn make-clue
