@@ -139,7 +139,7 @@
   (vec 
     (for [ letter target-vec ] (guesses-set letter)) ))
 
-(defn run-tests []
+(defn do-tests []
   (println "----------------------------------------")
   (println "Tests:")
 
@@ -228,7 +228,7 @@
 (defn main 
   ( [] (main tst-words) )
   ( [word-seq]
-      (run-tests)
+      (do-tests)
       (println "----------------------------------------")
       (let [words-map     (words-by-length word-seq)
             max-word-len  (apply max (keys words-map) )
@@ -250,4 +250,4 @@
 )
 (defn -main [& args] (apply main args) )
 
-; (defonce sanity-check (run-tests) )
+; (defonce sanity-check (do-tests) )
