@@ -93,7 +93,8 @@
   [pred-seq data-seq]
   (let [ both-seq     (map vector pred-seq data-seq )
          filt-seq     (filter #(% 0) both-seq)
-         result       (vec (map second filt-seq)) ]
+         filt-data    (map second filt-seq) 
+         result       (vec filt-data) ]
     result
   ) )
 
@@ -111,9 +112,32 @@
     result
   ) )
 
+(defn match-guess?
+  "Returns true if a guess matches the target word. The target word is a vector of
+  characters.  The guess value is a vector of the same length with elements that are
+  either a character or nil, where nil indicates a wildcard that matches any character in
+  the target word."
+  [tgt-word guess]
+  { :pre  [ (= (count tgt-word) (count guess)) ] 
+    :post [] }
+  (let [ pair-seq   (map vector guess tgt-word)
+         result     (every? #(or (=    (first %) (second %))
+                                 (nil? (first %)) )
+                      pair-seq) ]
+    result
+  )
+)
+
 (defn run-tests []
   (println "----------------------------------------")
   (println "Tests:")
+
+  ; Match guesses
+  (println "match guesses" )
+  (assert (match-guess? "abcd" "abcd") )
+  (assert (match-guess? "abcd" [\a \b \c \d]) )
+  (assert (match-guess? "abcd" [nil nil nil nil]) )
+  (assert (match-guess? "abcd" [\a nil nil nil]) )
 
   ; Filtering one sequence with another
   (let [
@@ -156,22 +180,24 @@
         words-map (words-by-length tst-words)
         curr-len  4
         curr-words  (words-map curr-len)
+          _ (println "curr-words:" curr-words)
         word-array  (to-word-array  curr-words)
         col-char-freqs (freqs-by-col word-array)
         all-char-freqs (apply merge-with + col-char-freqs)
         most-pair (reduce #(if (< (second %1) (second %2) )  %2 %1 )
                     (seq all-char-freqs) )
+          _ (println "most-pair:" most-pair)
         max-freq-val (first most-pair)
+          _ (println "max-freq-val" max-freq-val)
         wordVec    [\x \x \c \d]
-        guessVec   [nil nil nil nil]
+        guessVec   [nil \b nil nil]
         keepFlg    (map #(nil? %) guessVec )   
           _ (println "keepFlg" keepFlg)
         keepFreqs  (filter-with keepFlg col-char-freqs)
           _ (println "keepFreqs" keepFreqs)
+        keepWords  (filter-with keepFlg curr-words)
+          _ (println "keepWords" keepWords)
        ]
-    (println "curr-words:" curr-words)
-    (println "most-pair:" most-pair)
-    (println "max-freq-val" max-freq-val)
     (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
     (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
     (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
