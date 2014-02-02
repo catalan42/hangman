@@ -1,6 +1,7 @@
 (ns hangman.core
   (:require
     [clojure.string  :as str]
+    [clojure.set     :as set]
   ) )
 
 
@@ -12,6 +13,12 @@
   (println 
     (str seqName "("  (count seqVals) ") " )
         (take show-info-size (map #(str \" % \") seqVals)) ))
+
+(def all-chars 
+  "A set of all lowercase characters [a..z]"
+  (->> (range  (int \a)  (inc (int \z))  )
+       (map char)
+        set ))
 
 (def all-words   
   "A collection of all words for the hangman game."
@@ -132,6 +139,21 @@
                       pair-seq) ]
     result ))
 
+(defn make-guess
+  "Generate the next guess char. clue-vec consists of chars or nil, where a char shows
+  correctly guessed letters, and nil shows chars not yet guessed.  "
+  [clue-vec col-char-freqs used-chars]
+  (let [
+    all-char-freqs  (apply merge-with + col-char-freqs)
+      _ (println "all-char-freqs" all-char-freqs)
+    avail-chars     (set/difference (set(keys all-char-freqs)) used-chars)
+      _ (println "avail-chars" avail-chars)
+    max-avail-char  (apply max-key all-char-freqs avail-chars ) ]
+      _ (println "max-avail-char" max-avail-char)
+    max-avail-char     
+  )
+)
+
 (defn run-tests []
   (println "----------------------------------------")
   (println "Tests:")
@@ -180,33 +202,40 @@
              {\a 1 \b 2 \c 3} ))
 
   ; Test frequency function
-  (let [tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-        words-map (words-by-length tst-words)
-        curr-len  4
-        curr-words  (words-map curr-len)
-          _ (println "curr-words:" curr-words)
-        word-array  (to-word-array  curr-words)
-        col-char-freqs (freqs-by-col word-array)
-        all-char-freqs (apply merge-with + col-char-freqs)
-        max-freq-val (apply max-key all-char-freqs (keys all-char-freqs) )
+  (let [
+    tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
+    words-map           (words-by-length tst-words)
+      _ (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
 
-        wordVec    [ \x  \x  \c  \d  ]
-        guessVec   [ nil \b  nil nil ]
-        keepFlg    (map #(nil? %) guessVec )   
-          _ (println "keepFlg" keepFlg)
-        keepFreqs  (filter-with keepFlg col-char-freqs)
-          _ (println "keepFreqs" keepFreqs)
-        keepWords  (filter-with keepFlg curr-words)
-          _ (println "keepWords" keepWords)
-       ]
-    (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
-    (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
-    (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
-    (assert (= all-char-freqs { \a 1, \b 2, \c 3, \d 4, \x 6} )) 
-    (assert (= max-freq-val \x )) 
+    curr-len            4
+    curr-words          (words-map curr-len)
+      _ (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
+      _ (println "curr-words:" curr-words)
+    word-array          (to-word-array  curr-words)
+    col-char-freqs      (freqs-by-col word-array)
+      _ (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
+
+    all-char-freqs      (apply merge-with + col-char-freqs)
+      _ (assert (= all-char-freqs { \a 1, \b 2, \c 3, \d 4, \x 6} )) 
+
+    max-freq-val        (apply max-key all-char-freqs (keys all-char-freqs) )
+      _ (assert (= max-freq-val \x ))
+
+    wordVec             [ \x  \x  \c  \d  ]
+    clue-vec            [ nil \b  nil nil ]
+    keepFlg             (map #(nil? %) clue-vec )   
+      _ (println "keepFlg" keepFlg)
+    keepFreqs           (filter-with keepFlg col-char-freqs)
+      _ (println "keepFreqs" keepFreqs)
+    keepWords           (filter-with keepFlg curr-words)
+      _ (println "keepWords" keepWords)
+
+    used-chars #{ \b }
+    guess               (make-guess clue-vec col-char-freqs used-chars)
+      _ (println "guess" guess)
+
+  ]
   )
-
-  (println)
 )
 
 (defn main 
