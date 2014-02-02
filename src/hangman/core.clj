@@ -37,25 +37,17 @@
   "Returns all words of the specified length as a 2D array (vector of vectors).
   First index selects a given word, 2nd index selects chars from that word."
   [word-seq]
-  { :pre  []
-    :post [ (vector? %) ] }
   (vec
     (map vec word-seq) ))
 
 (defn num-rows
   "Given a 2D array (vector of vectors), return the number of rows (1st dimension)."
   [word-array]
-  { :pre  [ (vector? word-array) ]
-    :post [] }
   (count word-array) )
 
 (defn num-cols
   "Given a 2D array (vector of vectors), return the number of columns (2nd dimension)."
   [word-array]
-  { :pre  [ ;(vector?  word-array) 
-            ;(vector? (word-array 0)) 
-            ]
-    :post [] }
   (count (word-array 0)) )
 
 (defn get-array-col
@@ -105,9 +97,9 @@
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
   A sequence-based implementation"
   [pred-seq data-seq]
-  (let [ pair-seq     (map vector pred-seq data-seq )
-         filt-seq     (filter #(% 0) pair-seq)
-         filt-data    (map second filt-seq) 
+  (let [pred-data-pairs   (map vector pred-seq data-seq )
+        filt-seq          (filter #(first %) pred-data-pairs)
+        filt-data         (map second filt-seq) 
   ] (vec filt-data) ))
 
 (defn filter-with 
@@ -121,10 +113,9 @@
   "Generate the next guess char. clue-vec consists of chars or nil, where a char shows
   correctly guessed letters, and nil shows chars not yet guessed.  "
   [clue-vec col-char-freqs used-chars]
-  (let [
-    all-char-freqs  (apply merge-with + col-char-freqs)
-    avail-chars     (set/difference (set(keys all-char-freqs)) used-chars)
-    max-avail-char  (apply max-key all-char-freqs avail-chars ) 
+  (let [all-char-freqs    (apply merge-with + col-char-freqs)
+        avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
+        max-avail-char    (apply max-key all-char-freqs avail-chars ) 
   ] max-avail-char ) )
 
 (defn make-clue
@@ -138,15 +129,14 @@
   (println "Tests:")
 
   ; Filtering one sequence with another
-  (let [
-    pred-vals5  [ true false 5 nil :a ] 
-    pred-vals8  [ true false true nil true nil false true ] 
+  (let [pred-vals5  [ true false 5 nil :a ] 
+        pred-vals8  [ true false true nil true nil false true ] 
   ]
     (assert (= (filter-with     pred-vals5 (range 5)) [0 2 4  ] ))
     (assert (= (filter-with     pred-vals8 (range 8)) [0 2 4 7] )) 
     (assert (= (filter-with-seq pred-vals8 (range 5)) [0 2 4  ] ))
     (assert (= (filter-with-seq pred-vals8 (range 8)) [0 2 4 7] )) 
-    )
+  )
 
   ; Manipulation of strings/vectors/character seq's
   (assert (= (vec "abcd")                [\a \b \c \d] ))
@@ -154,7 +144,7 @@
   (assert (= (apply str (vec "abcd"))    "abcd" ))
 
   ; Test array slicing functions
-  (let [ tstArr [ [:a :b :c] [1 2 3] [\a \b \c]] ]
+  (let [tstArr [ [:a :b :c] [1 2 3] [\a \b \c]] ]
     (assert (= (get-array-row tstArr 0) [:a :b :c] ))
     (assert (= (get-array-row tstArr 1) [ 1  2  3] ))
     (assert (= (get-array-row tstArr 2) [\a \b \c] ))
