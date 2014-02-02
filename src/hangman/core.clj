@@ -15,7 +15,7 @@
 
 (def all-words   
   "A collection of all words for the hangman game."
-  (->> (slurp"resources/words.txt")
+  (->> (slurp "resources/words.txt")
        (str/split-lines )
        (map str/trim ) ))
 
