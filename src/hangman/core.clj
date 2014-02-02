@@ -104,9 +104,8 @@
         pred-vec  (vec pred-seq)
         filt-fn   (fn [idx data-val] 
                     (if (pred-vec idx) (data-vec idx) ))
-        filt-seq  (keep-indexed filt-fn data-vec) ]
-    (vec filt-seq)
-  ) )
+        filt-seq  (keep-indexed filt-fn data-vec) 
+  ] (vec filt-seq) ))
 
 (defn filter-with-seq
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
@@ -114,9 +113,8 @@
   [pred-seq data-seq]
   (let [ pair-seq     (map vector pred-seq data-seq )
          filt-seq     (filter #(% 0) pair-seq)
-         filt-data    (map second filt-seq) ]
-    (vec filt-data)
-  ) )
+         filt-data    (map second filt-seq) 
+  ] (vec filt-data) ))
 
 (defn filter-with 
   "Returns values from data-seq where corresponding pred-seq elements are truthy."
@@ -125,20 +123,6 @@
     :post [ (vector? %) ] }
   (filter-with-seq pred-seq data-seq) )
 
-(defn match-guess?
-  "Returns true if a guess matches the target word. The target word is a vector of
-  characters.  The guess value is a vector of the same length with elements that are
-  either a character or nil, where nil indicates a wildcard that matches any character in
-  the target word."
-  [tgt-word guess]
-  { :pre  [ (= (count tgt-word) (count guess)) ] 
-    :post [] }
-  (let [ pair-seq   (map vector guess tgt-word)
-         result     (every? #(or (=    (first %) (second %))
-                                 (nil? (first %)) )
-                      pair-seq) ]
-    result ))
-
 (defn make-guess
   "Generate the next guess char. clue-vec consists of chars or nil, where a char shows
   correctly guessed letters, and nil shows chars not yet guessed.  "
@@ -146,29 +130,18 @@
   (let [
     all-char-freqs  (apply merge-with + col-char-freqs)
     avail-chars     (set/difference (set(keys all-char-freqs)) used-chars)
-    max-avail-char  (apply max-key all-char-freqs avail-chars ) ]
-    max-avail-char     
-  )
-)
+    max-avail-char  (apply max-key all-char-freqs avail-chars ) 
+  ] max-avail-char ) )
 
 (defn make-clue
   "Generate a clue given the target word and a vec of guessed letters."
   [target-vec guesses-set]
-  (println "target-vec" target-vec)
-  (println "guesses-set" guesses-set)
   (vec 
     (for [ letter target-vec ] (guesses-set letter)) ))
 
 (defn run-tests []
   (println "----------------------------------------")
   (println "Tests:")
-
-  ; Match guesses
-  (println "match guesses" )
-  (assert (match-guess? "abcd" "abcd") )
-  (assert (match-guess? "abcd" [\a \b \c \d]) )
-  (assert (match-guess? "abcd" [nil nil nil nil]) )
-  (assert (match-guess? "abcd" [\a nil nil nil]) )
 
   ; Filtering one sequence with another
   (let [
@@ -226,19 +199,26 @@
     max-freq-val        (apply max-key all-char-freqs (keys all-char-freqs) )
       _ (assert (= max-freq-val \x ))
 
-    target-word         [ \x  \b  \c  \d  ]
-    clue-vec            [ nil \b  nil nil ]
-    keepFlg             (map #(nil? %) clue-vec )   
+    tgt-word         [ \x  \b  \c  \d  ]
+    old-clue            [ nil \b  nil nil ]
+
+    keepFlg             (map #(nil? %) old-clue )   
       _ (println "keepFlg" keepFlg)
     keepFreqs           (filter-with keepFlg col-char-freqs)
       _ (println "keepFreqs" keepFreqs)
     keepWords           (filter-with keepFlg curr-words)
       _ (println "keepWords" keepWords)
 
-    guessed-chars       #{ \b \c }
-    new-guess           (make-guess clue-vec col-char-freqs guessed-chars)
+    guessed-chars       #{ \b }
+      _ (println "guessed-chars" guessed-chars)
+    new-guess           (make-guess old-clue col-char-freqs guessed-chars)
       _ (println "new-guess" new-guess)
-    new-clue            (make-clue target-word guessed-chars)
+    guessed-chars       (conj guessed-chars new-guess)
+      _ (println "guessed-chars" guessed-chars)
+
+    new-clue            (make-clue tgt-word guessed-chars)
+      _ (println "tgt-word" tgt-word)
+      _ (println "old-clue" old-clue)
       _ (println "new-clue" new-clue)
 
   ]
