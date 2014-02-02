@@ -127,12 +127,16 @@
         (run-tests)
         (show-info word-seq "ALL")
         (doseq [ curr-len (sort (keys words-map)) ]
-          (println)
-          (let [ curr-words  (words-map curr-len) 
-                 word-array  (to-word-array  curr-words) ]
-            (show-info curr-words (str "len=" curr-len) )
-            (println "freqs-by-col:" (freqs-by-col word-array)) 
-          ))
+(println)
+(let [ curr-words  (words-map curr-len)
+       word-array  (to-word-array  curr-words) ]
+       _ (show-info curr-words (str "len=" curr-len) )
+       col-char-freqs (freqs-by-col word-array)
+       _ (println "freqs-by-col:" curr-col-freqs)
+       all-char-freqs (apply merge-with + col-char-freqs)
+       _ (println "all-char-freqs" all-char-freqs)
+)
+        )
       )
   )
 )
