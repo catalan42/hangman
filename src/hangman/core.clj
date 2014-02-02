@@ -236,7 +236,7 @@
   ( [word-seq]
     (do-tests)
     (println "----------------------------------------")
-    (def tgt-word         "hate")
+    (def tgt-word         "bed")
     (def words-map        (to-words-by-length word-seq) )
     (def curr-len         (count tgt-word) )
     (def curr-words       (words-map curr-len) )
@@ -257,6 +257,9 @@
       ] ))
 
 ;(comment
+    (println)
+    (println "************************************************************")
+    (println "word-array" word-array)
     (loop [ guessed-chars  #{}
             clue           (make-clue tgt-word guessed-chars) 
           ]
@@ -267,9 +270,8 @@
       (println "clue" clue)
       (let [
         keep-flag       (map #(guess-matches? % clue ) word-array )
-          _ (println "keep-flag" keep-flag)
-        keep-words      (filter-with keep-flag curr-words)
-          _ (println "keep-words" keep-words)
+        keep-words      (filter-with keep-flag word-array)
+          _ (println "keep-words" (map str/join keep-words) )
         col-char-freqs   (to-freqs-by-col keep-words)
 
         new-guess       (make-guess clue col-char-freqs guessed-chars)
@@ -279,8 +281,9 @@
         new-clue        (make-clue tgt-word guessed-chars)
           _ (println "new-clue" new-clue)
       ]
-        (when (some nil? new-clue)
-          (recur  (conj guessed-chars new-guess)  new-clue ) )
+        (if (some nil? new-clue)
+          (recur  (conj guessed-chars new-guess)  new-clue ) 
+        )
       ))
 ;)
 
