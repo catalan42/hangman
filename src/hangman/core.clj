@@ -14,12 +14,6 @@
     (str seqName "("  (count seqVals) ") " )
         (take show-info-size (map #(str \" % \") seqVals)) ))
 
-(def all-chars 
-  "A set of all lowercase characters [a..z]"
-  (->> (range  (int \a)  (inc (int \z))  )
-       (map char)
-        set ))
-
 (def all-words   
   "A collection of all words for the hangman game."
   (->> (slurp "resources/words.txt")
@@ -220,9 +214,7 @@
       _ (println "tgt-word" tgt-word)
       _ (println "old-clue" old-clue)
       _ (println "new-clue" new-clue)
-
-  ]
-  )
+  ] )
 )
 
 (defn main 
