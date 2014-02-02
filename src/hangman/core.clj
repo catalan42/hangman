@@ -190,10 +190,7 @@
         word-array  (to-word-array  curr-words)
         col-char-freqs (freqs-by-col word-array)
         all-char-freqs (apply merge-with + col-char-freqs)
-          _ (println "all-char-freqs" all-char-freqs)
-
         max-freq-val (apply max-key all-char-freqs (keys all-char-freqs) )
-          _ (println "max-freq-val" max-freq-val)
 
         wordVec    [ \x  \x  \c  \d  ]
         guessVec   [ nil \b  nil nil ]
