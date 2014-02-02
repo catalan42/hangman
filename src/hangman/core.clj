@@ -106,6 +106,17 @@
     (assert (= (get-array-col tstArr 2) [:c  3 \c] ))
   )
 
+  ; Test frequency function
+  (println "----------------------------------------")
+  (println "Tests:")
+  (let [ 
+    tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
+    words-map (words-by-length tst-words)
+    _ (println words-map)
+  ]
+  )
+  (println)
+
   ; Use of (frequencies...) and (merge-with...)
   (assert (= (frequencies "abbccc")          
              {\a 1, \b 2, \c 3} ))
@@ -121,25 +132,26 @@
 (defn main 
   ( [] (main tst-words) )
   ( [word-seq]
+      (run-tests)
+      (println "----------------------------------------")
       (let [words-map     (words-by-length word-seq)
             max-word-len  (apply max (keys words-map) )
             ]
-        (run-tests)
         (show-info word-seq "ALL")
         (doseq [ curr-len (sort (keys words-map)) ]
 (println)
 (let [ curr-words  (words-map curr-len)
-       word-array  (to-word-array  curr-words) ]
+       word-array  (to-word-array  curr-words)
        _ (show-info curr-words (str "len=" curr-len) )
        col-char-freqs (freqs-by-col word-array)
-       _ (println "freqs-by-col:" curr-col-freqs)
+       _ (println "freqs-by-col:" col-char-freqs)
        all-char-freqs (apply merge-with + col-char-freqs)
        _ (println "all-char-freqs" all-char-freqs)
-)
+] )
         )
       )
   )
 )
 (defn -main [& args] (apply main args) )
 
-(defonce sanity-check (run-tests) )
+; (defonce sanity-check (run-tests) )
