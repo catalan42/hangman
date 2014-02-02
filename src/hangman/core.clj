@@ -98,8 +98,9 @@
     result
   ) )
 
-(defn filter-with 
-  "Returns values from data-seq where corresponding pred-seq elements are truthy."
+(defn filter-with-idx
+  "Returns values from data-seq where corresponding pred-seq elements are truthy.
+  An indexed-based implementation."
   [pred-seq data-seq]
   { :pre  [ (= (count pred-seq) (count data-seq)) ] 
     :post [ (vector? %) ] }
@@ -111,6 +112,13 @@
         result    (vec filt-seq) ]
     result
   ) )
+
+(defn filter-with 
+  "Returns values from data-seq where corresponding pred-seq elements are truthy."
+  [pred-seq data-seq]
+  { :pre  [ (= (count pred-seq) (count data-seq)) ] 
+    :post [ (vector? %) ] }
+  (filter-with-seq pred-seq data-seq) )
 
 (defn match-guess?
   "Returns true if a guess matches the target word. The target word is a vector of
@@ -124,9 +132,7 @@
          result     (every? #(or (=    (first %) (second %))
                                  (nil? (first %)) )
                       pair-seq) ]
-    result
-  )
-)
+    result ))
 
 (defn run-tests []
   (println "----------------------------------------")
