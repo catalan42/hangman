@@ -131,9 +131,8 @@
   [clue-vec col-char-freqs used-chars]
   (let [
     all-char-freqs    (apply merge-with + col-char-freqs)
-      ; _ (println "all-char-freqs" all-char-freqs )
     avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
-      _ (println "avail-chars" avail-chars )
+      ; _ (println "avail-chars" avail-chars )
     max-avail-char    (apply max-key all-char-freqs avail-chars ) 
   ] max-avail-char ) )
 
@@ -144,8 +143,6 @@
     (for [ letter target-vec ] (guesses-set letter)) ))
 
 (defn do-tests []
-  (println "----------------------------------------")
-  (println "Tests:")
 
   ; Filtering one sequence with another
   (let [pred-vals5  [ true false 5 nil :a ] 
@@ -183,7 +180,6 @@
              {\a 1 \b 2 \c 3} ))
 
   ; Match guesses
-  (println "match guesses" )
   (assert (guess-matches? "abcd" "abcd") )
   (assert (guess-matches? "abcd" [\a \b \c \d]) )
   (assert (guess-matches? "abcd" [nil nil nil nil]) )
@@ -197,9 +193,8 @@
     curr-len            4
     curr-words          (words-map curr-len)
       _ (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
-      _ (println "curr-words:" curr-words)
     word-array          (to-word-array  curr-words)
-      _ (println "word-array" word-array)
+      _ (assert (= word-array [[\a \b \c \d] [\x \b \c \d] [\x \x \c \d] [\x \x \x \d]] ))
 
     col-char-freqs      (to-freqs-by-col word-array)
       _ (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
@@ -210,23 +205,18 @@
 
     tgt-word            [ \x  \b  \c  \d  ]
     clue                [ nil \b  nil nil ]
-
     keep-flag           (map #(guess-matches? % clue ) word-array )
-      _ (println "keep-flag" keep-flag)
+      _ (assert (= keep-flag [true true false false]))
     keep-words          (filter-with keep-flag curr-words)
-      _ (println "keep-words" keep-words)
-
+      _ (assert (= keep-words ["abcd" "xbcd"] ))
     guessed-chars       #{ \b }
-      _ (println "guessed-chars" guessed-chars)
+      _ (assert (= guessed-chars #{\b} ))
     new-guess           (make-guess clue col-char-freqs guessed-chars)
-      _ (println "new-guess" new-guess)
+      _ (assert (= new-guess \x ))
     guessed-chars       (conj guessed-chars new-guess)
-      _ (println "guessed-chars" guessed-chars)
-
+      _ (assert (= guessed-chars #{\b \x} ))
     new-clue            (make-clue tgt-word guessed-chars)
-      _ (println "tgt-word" tgt-word)
-      _ (println "clue"     clue)
-      _ (println "new-clue" new-clue)
+      _ (assert (= new-clue [\x \b nil nil] ))
   ] )
 )
 
@@ -236,7 +226,7 @@
   ( [word-seq]
     (do-tests)
     (println "----------------------------------------")
-    (def tgt-word         "bed")
+    (def tgt-word         "work")
     (def words-map        (to-words-by-length word-seq) )
     (def curr-len         (count tgt-word) )
     (def curr-words       (words-map curr-len) )
@@ -256,36 +246,36 @@
          _ (println "all-char-freqs" all-char-freqs)
       ] ))
 
-;(comment
     (println)
     (println "************************************************************")
-    (println "word-array" word-array)
+    (println "word-array" (map str/join word-array) )
     (loop [ guessed-chars  #{}
             clue           (make-clue tgt-word guessed-chars) 
           ]
-      (println "----------------------------------------")
-      (println "guessed-chars (" 
-         (count guessed-chars) ")" 
-                guessed-chars)
+      (println )
       (println "clue" clue)
       (let [
         keep-flag       (map #(guess-matches? % clue ) word-array )
-        keep-words      (filter-with keep-flag word-array)
-          _ (println "keep-words" (map str/join keep-words) )
-        col-char-freqs   (to-freqs-by-col keep-words)
-
-        new-guess       (make-guess clue col-char-freqs guessed-chars)
-          _ (println "new-guess" new-guess)
-        guessed-chars   (conj guessed-chars new-guess)
-          _ (println "guessed-chars" guessed-chars)
-        new-clue        (make-clue tgt-word guessed-chars)
-          _ (println "new-clue" new-clue)
-      ]
-        (if (some nil? new-clue)
-          (recur  (conj guessed-chars new-guess)  new-clue ) 
-        )
+        keep-words      (filter-with keep-flag word-array) ]
+          (println "keep-words" (map str/join keep-words) )
+          (if (= 1 (num-rows keep-words))
+            (let [final-guess (str/join (keep-words 0)) ]
+              (println (str "***** found word:  '" final-guess "'  *****") )
+              (println "matches:" (= final-guess tgt-word)) )
+          ;else
+            (let [
+              col-char-freqs  (to-freqs-by-col keep-words)
+              new-guess       (make-guess clue col-char-freqs guessed-chars)
+              guessed-chars   (conj guessed-chars new-guess)
+              new-clue        (make-clue tgt-word guessed-chars)
+                _ (println "new-clue" new-clue "  new-guess" new-guess 
+                   "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
+              ]
+              (if (some nil? new-clue)
+                (recur  (conj guessed-chars new-guess)  new-clue ) 
+              ))
+          )
       ))
-;)
 
   )
 )
