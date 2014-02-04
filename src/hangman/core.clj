@@ -20,6 +20,8 @@
        (str/split-lines )
        (map str/trim ) ))
 
+(def all-letters (map char (range (int \a) (inc(int \z)) )))
+
 (def tst-words [ 
   "is" "at" "by" "up"
   "act" "add" "ace" "and" "ask" "abe" "ads"
@@ -125,11 +127,27 @@
                       pair-seq) ]
     result ))
 
-(defn make-guess
-  "Generate the next guess char. clue-vec consists of chars or nil, where a char shows
-  correctly guessed letters, and nil shows chars not yet guessed.  "
-  [clue-vec col-char-freqs used-chars]
+(defn make-guess-freq
+  "Generate the next guess letter, based on letter frequencies in the surviving words. The
+  clue-vec consists of chars or nil, where a char shows correctly guessed letters, and nil
+  shows chars not yet guessed.  "
+  [clue-vec keep-words used-chars]
   (let [
+    ; need to test again!
+    col-char-freqs  (to-freqs-by-col keep-words)
+    all-char-freqs    (apply merge-with + col-char-freqs)
+    avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
+      ; _ (println "avail-chars" avail-chars )
+    max-avail-char    (apply max-key all-char-freqs avail-chars ) 
+  ] max-avail-char ) )
+
+(defn make-guess
+  "Generate the next guess letter by calculating the bits of information for each possible
+  guess letter. The clue-vec consists of chars or nil, where a char shows correctly
+  guessed letters, and nil shows chars not yet guessed.  "
+  [clue-vec keep-words used-chars]
+  (let [
+    col-char-freqs  (to-freqs-by-col keep-words)
     all-char-freqs    (apply merge-with + col-char-freqs)
     avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
       ; _ (println "avail-chars" avail-chars )
@@ -143,7 +161,6 @@
     (for [ letter target-vec ] (guesses-set letter)) ))
 
 (defn do-tests []
-
   ; Filtering one sequence with another
   (let [pred-vals5  [ true false 5 nil :a ] 
         pred-vals8  [ true false true nil true nil false true ] 
@@ -211,7 +228,7 @@
       _ (assert (= keep-words ["abcd" "xbcd"] ))
     guessed-chars       #{ \b }
       _ (assert (= guessed-chars #{\b} ))
-    new-guess           (make-guess clue col-char-freqs guessed-chars)
+    new-guess           (make-guess-freq clue word-array guessed-chars)
       _ (assert (= new-guess \x ))
     guessed-chars       (conj guessed-chars new-guess)
       _ (assert (= guessed-chars #{\b \x} ))
@@ -238,7 +255,6 @@
     (def curr-words       (words-map curr-len) )
     (def word-array       (to-word-array  curr-words) )
     (def max-word-len     (apply max (keys words-map)) )
-    (def col-char-freqs   (to-freqs-by-col word-array) )
 
     (println)
     (println "************************************************************")
@@ -259,8 +275,7 @@
               (println "matches:" (= final-guess tgt-word)) )
           ;else
             (let [
-              col-char-freqs  (to-freqs-by-col keep-words)
-              new-guess       (make-guess clue col-char-freqs guessed-chars)
+              new-guess       (make-guess-freq clue keep-words guessed-chars)
               guessed-chars   (conj guessed-chars new-guess)
               new-clue        (make-clue tgt-word guessed-chars)
                 _ (println "  new-guess" new-guess 
