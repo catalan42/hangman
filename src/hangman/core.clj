@@ -20,7 +20,7 @@
        (str/split-lines )
        (map str/trim ) ))
 
-(def all-letters (map char (range (int \a) (inc(int \z)) )))
+(def ^:const all-letters (map char (range (int \a) (inc(int \z)) )))
 
 (def tst-words [ 
   "is" "at" "by" "up"
@@ -127,25 +127,57 @@
                       pair-seq) ]
     result ))
 
-(defn make-guess-freq
-  "Generate the next guess letter, based on letter frequencies in the surviving words. The
-  clue-vec consists of chars or nil, where a char shows correctly guessed letters, and nil
-  shows chars not yet guessed.  "
-  [clue-vec keep-words used-chars]
-  (let [
-    ; need to test again!
-    col-char-freqs  (to-freqs-by-col keep-words)
-    all-char-freqs    (apply merge-with + col-char-freqs)
-    avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
-      ; _ (println "avail-chars" avail-chars )
-    max-avail-char    (apply max-key all-char-freqs avail-chars ) 
-  ] max-avail-char ) )
+(defn word-has-letter?
+  "Returns true if a letter appears in a word, else nil."
+  [word letter]
+  (some #(= % letter) word) )
+
+(def ^:const log-2 (Math/log 2) )
+
+(defn log-base-2
+  "Calculates the base-2 logarithm."
+  [val]
+  { :pre  [ (< 0 val) ]
+    :post [] }
+  (/ (Math/log val) log-2) )
+
+(defn calc-entropy
+  "Calculates the entropy of a binary probability value."
+  [prob]
+  { :pre  [ (<= 0 prob 1) ]
+    :post [ (<= 0 % ) ] }
+  (let [prob-orig (double prob)]
+    (cond
+      (= 0.0 prob-orig) 0  ; avoid trying to compute log(0)
+      (= 1.0 prob-orig) 0  ; avoid trying to compute log(0)
+      :normal 
+        (let [prob-comp (- 1.0 prob-orig)]  ; complementary prob-orig
+          (+ (- (* prob-orig (log-base-2 prob-orig     ) ))
+             (- (* prob-comp (log-base-2 prob-comp) )) )) )))
+
+(defn calc-info-bits
+  "Calculates the number of bits of information gained for the guess-letter."
+  [words guess-letter]
+  (let [total-words     (count words)
+        match-words     (count (filter true? 
+                          (map #(word-has-letter? % guess-letter) words) ))
+        ratio           (/ (double match-words) (double total-words))
+        bits            (calc-entropy ratio) ]
+    bits ))
 
 (defn make-guess
   "Generate the next guess letter by calculating the bits of information for each possible
-  guess letter. The clue-vec consists of chars or nil, where a char shows correctly
-  guessed letters, and nil shows chars not yet guessed.  "
-  [clue-vec keep-words used-chars]
+  guess letter. "
+  [keep-words used-chars]
+  (let [
+        avail-chars   (set/difference (set all-letters) used-chars)
+        char-bits     (zipmap avail-chars (map #(calc-info-bits keep-words %) avail-chars) )
+        best-char     (apply max-key char-bits avail-chars ) ]
+    best-char ) )
+
+(defn make-guess-freq
+  "Generate the next guess letter, based on letter frequencies in the surviving words. "
+  [keep-words used-chars]
   (let [
     col-char-freqs  (to-freqs-by-col keep-words)
     all-char-freqs    (apply merge-with + col-char-freqs)
@@ -228,7 +260,7 @@
       _ (assert (= keep-words ["abcd" "xbcd"] ))
     guessed-chars       #{ \b }
       _ (assert (= guessed-chars #{\b} ))
-    new-guess           (make-guess-freq clue word-array guessed-chars)
+    new-guess           (make-guess-freq word-array guessed-chars)
       _ (assert (= new-guess \x ))
     guessed-chars       (conj guessed-chars new-guess)
       _ (assert (= guessed-chars #{\b \x} ))
@@ -242,6 +274,19 @@
   [clue]
   (str/join 
     (map  #(if (nil? %) "-" % )  clue) ))
+
+(comment
+(defn filter-words
+  "Calculates which words are possible matches given the guessed letters and clue string."
+  [curr-words clue guessed-chars]
+  (let [keep-chars      (for [clue-char clue :when (not(nil? clue-char))] clue-char)
+        fail-chars      (set/difference guessed-chars keep-chars)
+        keep-flag       (map #(guess-matches? % clue ) word-array )
+
+        fail-flag       (map #(guess-matches? % clue ) word-array )
+    keep-words      (filter-with keep-flag word-array) ] )
+)
+)
 
 (defn main 
   ( [] 
@@ -275,7 +320,7 @@
               (println "matches:" (= final-guess tgt-word)) )
           ;else
             (let [
-              new-guess       (make-guess-freq clue keep-words guessed-chars)
+              new-guess       (make-guess keep-words guessed-chars)
               guessed-chars   (conj guessed-chars new-guess)
               new-clue        (make-clue tgt-word guessed-chars)
                 _ (println "  new-guess" new-guess 
