@@ -220,13 +220,19 @@
   ] )
 )
 
+(defn format-clue
+  "Format the clue vector into a nice-looking string."
+  [clue]
+  (str/join 
+    (map  #(if (nil? %) "-" % )  clue) ))
+
 (defn main 
   ( [] 
-    (main tst-words) )
+    (main all-words) )
   ( [word-seq]
     (do-tests)
     (println "----------------------------------------")
-    (def tgt-word         "work")
+    (def tgt-word         "uniformed")
     (def words-map        (to-words-by-length word-seq) )
     (def curr-len         (count tgt-word) )
     (def curr-words       (words-map curr-len) )
@@ -234,30 +240,19 @@
     (def max-word-len     (apply max (keys words-map)) )
     (def col-char-freqs   (to-freqs-by-col word-array) )
 
-    (show-info word-seq "ALL")
-    (doseq [ curr-len (sort (keys words-map)) ]
-      (println)
-      (let [ 
-        curr-words       (words-map curr-len)
-         _ (show-info curr-words (str "len=" curr-len) )
-         col-char-freqs (to-freqs-by-col word-array)
-         _ (println "col-char-freqs" col-char-freqs)
-         all-char-freqs (apply merge-with + col-char-freqs)
-         _ (println "all-char-freqs" all-char-freqs)
-      ] ))
-
     (println)
     (println "************************************************************")
-    (println "word-array" (map str/join word-array) )
+    (println "word-array" (take 20 (map str/join word-array)) )
     (loop [ guessed-chars  #{}
             clue           (make-clue tgt-word guessed-chars) 
           ]
       (println )
-      (println "clue" clue)
       (let [
         keep-flag       (map #(guess-matches? % clue ) word-array )
         keep-words      (filter-with keep-flag word-array) ]
-          (println "keep-words" (map str/join keep-words) )
+          (println "clue: " (format-clue clue) 
+                    "  keep-words(" (count keep-words) "):" 
+                    (take 10 (map str/join keep-words)) "..." )
           (if (= 1 (num-rows keep-words))
             (let [final-guess (str/join (keep-words 0)) ]
               (println (str "***** found word:  '" final-guess "'  *****") )
@@ -268,7 +263,7 @@
               new-guess       (make-guess clue col-char-freqs guessed-chars)
               guessed-chars   (conj guessed-chars new-guess)
               new-clue        (make-clue tgt-word guessed-chars)
-                _ (println "new-clue" new-clue "  new-guess" new-guess 
+                _ (println "  new-guess" new-guess 
                    "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
               ]
               (if (some nil? new-clue)
