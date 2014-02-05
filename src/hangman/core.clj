@@ -60,15 +60,14 @@
 
 
 (defn guess-matches?
-  "Returns true if a guess matches the target word. The target word is a vector of
-  characters.  The guess value is a vector of the same length with elements that are
-  either a character or nil, where nil indicates a wildcard that matches any character in
-  the target word."
+  "Returns true if a guess matches the target word (a string). The guess value is a vector
+  of the same length with elements that are either a character or nil, where nil indicates
+  a wildcard that matches any character in the target word."
   [word guess]
   { :pre  [ (= (count word) (count guess)) 
             (not-any? nil? word) ]
     :post [] }
-  (let [ pair-seq   (map vector guess word)
+  (let [ pair-seq   (map vector guess word)  ; a sequence of pairs
          result     (every? #(or (=    (first %) (second %))
                                  (nil? (first %)) )
                       pair-seq) ]
@@ -93,31 +92,29 @@
   [prob]
   { :pre  [ (<= 0 prob 1) ]
     :post [ (<= 0 % ) ] }
-  (let [prob-orig (double prob)]
+  (let [prob-orig (double prob)
+        prob-comp (- 1.0 prob-orig) ]  ; complement of prob-orig
     (cond
       (= 0.0 prob-orig) 0  ; avoid trying to compute log(0)
       (= 1.0 prob-orig) 0  ; avoid trying to compute log(0)
       :normal 
-        (let [prob-comp (- 1.0 prob-orig)]  ; complementary prob-orig
-          (+ (- (* prob-orig (log-base-2 prob-orig     ) ))
-             (- (* prob-comp (log-base-2 prob-comp) )) )) )))
+          (+ (- (* prob-orig (log-base-2 prob-orig  )))
+             (- (* prob-comp (log-base-2 prob-comp  ))) ) )))
 
 (defn calc-info-bits
   "Calculates the number of bits of information gained for the guess-letter."
   [words guess-letter]
   (let [total-words     (count words)
-        match-words     (count (filter true? 
-                          (map #(word-has-letter? % guess-letter) words) ))
-        ratio           (/ (double match-words) (double total-words))
-        bits            (calc-entropy ratio) ]
-    bits ))
+        match-words     (count (filter #(word-has-letter? % guess-letter) words) )
+        word-ratio      (/ (double match-words) (double total-words)) ]
+    (calc-entropy word-ratio) ))
 
 (defn make-guess
   "Generate the next guess letter by calculating the bits of information for each possible
   guess letter. "
-  [word-list used-chars]
+  [words used-chars]
   (let [avail-chars   (set/difference all-letters used-chars)
-        char-bits     (zipmap avail-chars (map #(calc-info-bits word-list %) avail-chars) )
+        char-bits     (zipmap avail-chars (map #(calc-info-bits words %) avail-chars) )
         best-char     (apply max-key char-bits avail-chars) ]
     best-char ) )
 
@@ -201,11 +198,9 @@
     word-list          (words-map 4)
       _ (assert (= word-list     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
 
-    tgt-word            [ \x  \b  \c  \d  ]
-    clue                [ nil \b  nil nil ]
-    keep-flag           (map #(guess-matches? % clue ) word-list )
-      _ (assert (= keep-flag [true true false false]))
-    keep-words          (filter-with keep-flag word-list)
+    tgt-word       [ \x  \b  \c  \d  ]
+    clue           [ nil \b  nil nil ]
+    keep-words     (filter #(guess-matches? % clue ) word-list)
       _ (assert (= keep-words ["abcd" "xbcd"] ))
     guessed-chars       #{ \b }
       _ (assert (= guessed-chars #{\b} ))
