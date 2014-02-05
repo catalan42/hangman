@@ -101,8 +101,8 @@
 
 (defn main 
   ( [] 
-    (let [game-words    all-words
-          tgt-word      "uniformed"
+    (let [tgt-word      "toxics"
+          game-words    all-words
           words-map     (group-by count game-words)  ; map keyed by word length
           word-list     (words-map (count tgt-word)) ; words of correct length
       ]
@@ -122,8 +122,7 @@
                   new-clue        (make-clue tgt-word guessed-chars) ]
               (log-msg "clue: " clue "  new-guess" new-guess 
                 "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
-              (when (some #(= \- %) new-clue)
-                (recur  (conj guessed-chars new-guess)  new-clue ) )
+              (recur  (conj guessed-chars new-guess)  new-clue )
             )
           )
         ))
