@@ -43,31 +43,31 @@
     (map vec word-seq) ))
 
 (defn num-rows
-  "Given a 2D array (seq of seqs), return the number of rows (1st dimension)."
-  [word-array]
-  (count word-array) )
+  "Given a list of words (seq of seqs), return the number of rows (1st dimension)."
+  [word-list]
+  (count word-list) )
 
 (defn num-cols
-  "Given a 2D array (seq of seqs), return the number of columns (2nd dimension)."
-  [word-array]
-  (count (first word-array)) )
+  "Given a list of words (seq of seqs), return the number of columns (2nd dimension)."
+  [word-list]
+  (count (first word-list)) )
 
 (defn get-array-col
-  "Given a 2D array (seq of seqs), return a vector of elements 
+  "Given a list of words (seq of seqs), return a vector of elements 
   from the specified column."
-  [word-seq col-idx]
-  { :pre  [ (vector? word-seq) (integer? col-idx) ]
+  [word-list col-idx]
+  { :pre  [ (integer? col-idx) ]
     :post [] }
   (reduce #(conj %1 (nth %2 col-idx))
-          [] word-seq ) )
+          [] word-list ) )
 
 (defn get-array-row
-  "Given a 2D array (vector of vectors), return a vector of elements 
+  "Given a list of words (seq of seqs), return a vector of elements 
   from the specified row."
-  [word-array row-idx]
+  [word-list row-idx]
   { :pre  [ (integer? row-idx) ]
     :post [] }
-  (nth word-array row-idx) )
+  (nth word-list row-idx) )
 
 (defn filter-with-idx
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
