@@ -20,7 +20,7 @@
        (str/split-lines )
        (map str/trim ) ))
 
-(def ^:const all-letters (map char (range (int \a) (inc(int \z)) )))
+(def ^:const all-letters-set (set (map char (range (int \a) (inc(int \z)) ))) )
 
 (def tst-words [ 
   "is" "at" "by" "up"
@@ -170,7 +170,7 @@
   guess letter. "
   [keep-words used-chars]
   (let [
-        avail-chars   (set/difference (set all-letters) used-chars)
+        avail-chars   (set/difference all-letters-set used-chars)
         char-bits     (zipmap avail-chars (map #(calc-info-bits keep-words %) avail-chars) )
         best-char     (apply max-key char-bits avail-chars ) ]
     best-char ) )
@@ -192,14 +192,21 @@
   (vec 
     (for [ letter target-vec ] (guesses-set letter)) ))
 
+(defn complement-char-class
+  "Generate the regex for the complement of a set of characters."
+  [not-chars]
+  (if (< 0 (count not-chars))
+    (str "[^" (str/join not-chars) "]" )
+    "." ))
+
 (defn clue-to-regex
   "Convert a clue string and set of guessed chars into a regex for filtering possible
   matching words."
   [clue-str guessed-chars]
-  (let [not-guessed-chars   (str "[^" (str/join guessed-chars) "]" )
+  (let [not-guessed-class   (complement-char-class guessed-chars)
         patt-str   (str/join
                      (for [clue-ch clue-str]
-                       (if (= clue-ch \-) not-guessed-chars clue-ch) ))
+                       (if (= clue-ch \-) not-guessed-class clue-ch) ))
     ] patt-str ))
 
 (defn do-tests []
@@ -219,42 +226,22 @@
   (assert (= (apply str (vec "abcd"))    "abcd" ))
 
   ; Test regex stuff
-  (let [words   ["abcd" "xbcd" "xxcd" "xxxd"]
-        letters [\a \b \c \d] 
-        ]
-    (println "#1 --------------------")
-    (doseq [word words]
-      (println)
-      (print (str word ": ") )
-      (doseq [letter letters] 
-        (if (re-find (re-pattern (str letter)) word) (print letter) (print \-)) ) )
-    (println)
+  (assert (= (complement-char-class #{})         "."      ))
+  (assert (= (complement-char-class #{\a \b})    "[^ab]"  ))
+  (let [words           ["abcd" "xbcd" "xxcd" "xxxd"]
+        letters         [\a \b \c \d] 
+        guessed-chars   #{\b \s}
+        clue-str        "-b--"
 
-    (println "#2 --------------------")
-    (let [used    #{\b \s}
-          clue    "a---"
-          char-class    (str "[^" (str/join used) "]" )
-            _ (println "char-class" char-class)
-          patt-str      (str/join (flatten [ char-class "b" char-class char-class ] ))
-            _ (println "patt-str" patt-str)
-      ]
-      (println "patt-str" patt-str)
-      (doseq [word words]
-        (println word ":" (re-find (re-pattern patt-str) word )) ))
-
-    (println "#3 --------------------")
-    (let [used    #{\b \s}
-          clue    "-b--"
-          patt-str      (clue-to-regex clue used)
-      ]
-      (println "clue    " clue)
-      (println "used    " used)
-      (println "patt-str" patt-str)
-      (println "matches:")
-      (doseq [word words]
-        (println "  " word ":" (re-find (re-pattern patt-str) word )) )
-    )
-
+        not-char-class  (complement-char-class guessed-chars)
+        patt-str        (clue-to-regex clue-str guessed-chars)
+    ]
+    (assert (= not-char-class  "[^bs]"                 ))
+    (assert (= patt-str        "[^bs]b[^bs][^bs]"      ))
+    (assert      (re-find (re-pattern patt-str) "abcd" ))
+    (assert      (re-find (re-pattern patt-str) "xbcd" ))
+    (assert (not (re-find (re-pattern patt-str) "xxcd" )))
+    (assert (not (re-find (re-pattern patt-str) "xxxd" )))
     (println)
   )
 
