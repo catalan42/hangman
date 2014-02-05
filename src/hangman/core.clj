@@ -20,7 +20,7 @@
        (str/split-lines )
        (map str/trim ) ))
 
-(def ^:const all-letters-set (set (map char (range (int \a) (inc(int \z)) ))) )
+(def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
 (def tst-words [ 
   "is" "at" "by" "up"
@@ -43,44 +43,41 @@
     (map vec word-seq) ))
 
 (defn num-rows
-  "Given a 2D array (vector of vectors), return the number of rows (1st dimension)."
+  "Given a 2D array (seq of seqs), return the number of rows (1st dimension)."
   [word-array]
   (count word-array) )
 
 (defn num-cols
-  "Given a 2D array (vector of vectors), return the number of columns (2nd dimension)."
+  "Given a 2D array (seq of seqs), return the number of columns (2nd dimension)."
   [word-array]
-  (count (word-array 0)) )
+  (count (first word-array)) )
 
 (defn get-array-col
-  "Given a 2D array (vector of vectors), return a vector of elements 
+  "Given a 2D array (seq of seqs), return a vector of elements 
   from the specified column."
-  [word-array col-idx]
-  { :pre  [ (vector? word-array) (integer? col-idx) ]
-    :post [ (vector? %) ] }
-  (reduce #(conj %1 (%2 col-idx))
-          [] word-array ) )
+  [word-seq col-idx]
+  { :pre  [ (vector? word-seq) (integer? col-idx) ]
+    :post [] }
+  (reduce #(conj %1 (nth %2 col-idx))
+          [] word-seq ) )
 
 (defn get-array-row
   "Given a 2D array (vector of vectors), return a vector of elements 
   from the specified row."
   [word-array row-idx]
   { :pre  [ (integer? row-idx) ]
-    :post [ (vector? %) ] }
-  (word-array row-idx) )
+    :post [] }
+  (nth word-array row-idx) )
 
 (defn to-freqs-by-col
-  "For each column of a 2D array, computes an element frequency map. Returns as 
-  a vector indexed by column."
+  "For each column of a 2D array (seq of seqs), computes an element frequency map. Returns
+  as a vector indexed by column."
   [word-array]
-  { :pre  [ (vector? word-array)
-            (< 0 (num-rows word-array) )
+  { :pre  [ (< 0 (num-rows word-array) )
             (< 0 (num-cols word-array) ) ] 
-    :post [ (vector? %) ] }
-  (vec
-    (for [idx (range 0 (num-cols word-array)) ]
-      (let [curr-col (get-array-col word-array idx)]
-        (frequencies curr-col)) )))
+    :post [] }
+  (vec (for [idx (range 0 (num-cols word-array)) ]
+         (frequencies (get-array-col word-array idx)) )))
 
 (defn filter-with-idx
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
@@ -169,10 +166,9 @@
   "Generate the next guess letter by calculating the bits of information for each possible
   guess letter. "
   [keep-words used-chars]
-  (let [
-        avail-chars   (set/difference all-letters-set used-chars)
+  (let [avail-chars   (set/difference all-letters used-chars)
         char-bits     (zipmap avail-chars (map #(calc-info-bits keep-words %) avail-chars) )
-        best-char     (apply max-key char-bits avail-chars ) ]
+        best-char     (apply max-key char-bits avail-chars) ]
     best-char ) )
 
 (defn make-guess-freq
@@ -280,7 +276,8 @@
     curr-words          (words-map curr-len)
       _ (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
     word-array          (to-word-array  curr-words)
-      _ (assert (= word-array [[\a \b \c \d] [\x \b \c \d] [\x \x \c \d] [\x \x \x \d]] ))
+      _ (assert (= word-array
+                   [[\a \b \c \d] [\x \b \c \d] [\x \x \c \d] [\x \x \x \d]] ))
 
     col-char-freqs      (to-freqs-by-col word-array)
       _ (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
