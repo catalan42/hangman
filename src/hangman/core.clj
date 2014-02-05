@@ -6,6 +6,14 @@
 
 (def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
+(def logging-enabled true)
+
+(defn log-msg
+  "Write log msg to console for debugging."
+  [& msgs]
+  (when logging-enabled
+    (apply println msgs)) )
+
 (def all-words   
   "A collection of all words for the hangman game."
   (->> (slurp "resources/words.txt")
@@ -16,7 +24,7 @@
 (defn show-info
   "Print synopsis info about a sequence of strings"
   [ seqName seqVals ]
-  (println 
+  (log-msg 
     (str seqName "("  (count seqVals) ") " )
         (take show-info-size (map #(str \" % \") seqVals)) ))
 
@@ -100,19 +108,19 @@
       ]
       (loop [ guessed-chars   #{}
               clue            (make-clue tgt-word guessed-chars) ]
-        (println)
+        (log-msg)
         (let [ keep-words (filter-words clue guessed-chars word-list) ]
           (show-info "keep-words" keep-words)
           (if (= 1 (count keep-words))
             (let [final-guess (str/join (first keep-words)) ]
-              (println (str "***** found word:  '" final-guess 
+              (log-msg (str "***** found word:  '" final-guess 
                 "'   Guesses:  " (count guessed-chars) "  *****") )
-              (println "matches:" (= final-guess tgt-word)) )
+              (log-msg "matches:" (= final-guess tgt-word)) )
           ;else
             (let [new-guess       (make-guess keep-words guessed-chars)
                   guessed-chars   (conj guessed-chars new-guess)
                   new-clue        (make-clue tgt-word guessed-chars) ]
-              (println "clue: " clue "  new-guess" new-guess 
+              (log-msg "clue: " clue "  new-guess" new-guess 
                 "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
               (when (some #(= \- %) new-clue)
                 (recur  (conj guessed-chars new-guess)  new-clue ) )
