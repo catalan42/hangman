@@ -21,13 +21,6 @@
 
 (def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
-(def tst-words [ 
-  "is" "at" "by" "up"
-  "act" "add" "ace" "and" "ask" "abe" "ads"
-  "bad" "bug" "bed" "bet"  "big" "bit"
-  "cat" "car" "can" "cob" "con" "cop" "cup" 
-  "work" "love" "hate" "jobs" "able" "ball" ] )
-
 (defn make-clue
   "Generate a clue given the target word and a vec of guessed letters. The clue is a
   vector the length of the target word consisting of either letters (for correctly guessed
@@ -62,19 +55,22 @@
         keep-words    (filter #(re-find re-patt %) words ) ]
     keep-words ))
 
-(defn make-guess-1
-  "Choose the most numerous letter"
+(defn make-guess
+  "Choose the most common letter. Same idea as building a Huffman code."
   [words used-chars]
   (let [avail-chars   (set/difference all-letters used-chars)
         char-freqs    (frequencies (str/join words))
         best-char     (apply max-key #(get char-freqs % -1) avail-chars) ]
     best-char ))
 
-(defn make-guess
-  [words used-chars]
-  (make-guess-1 words used-chars) )
-
 (defn do-tests []
+  (let [tst-words       [ "abcd" "xbcd" "xxcd" "xxxd" ] 
+        words-map       (group-by count tst-words)
+        word-list       (words-map 4)
+  ]
+    (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
+    (assert (= word-list      ["abcd" "xbcd" "xxcd" "xxxd"]  ))
+  )
 
   ; Test regex stuff
   (assert (= (complement-char-class #{})         "."      ))
@@ -93,20 +89,12 @@
     (assert (not (re-find (re-pattern patt-str) "xxcd" )))
     (assert (not (re-find (re-pattern patt-str) "xxxd" )))
 
-    ; Test if keep word
     (assert (= (filter-words "----"  #{}      ["abcd"] ) ["abcd"] ))
     (assert (= (filter-words "abcd"  #{}      ["abcd"] ) ["abcd"] ))
     (assert (= (filter-words "a---"  #{}      ["abcd"] ) ["abcd"] ))
     (assert (= (filter-words "ab--"  #{}      ["abcd"] ) ["abcd"] ))
     (assert (= (filter-words "-b--"  #{\b \s} ["abcd"] ) ["abcd"] ))
     (assert (= (filter-words "a---"  #{\b \s} ["abcd"] ) []       ))
-  )
-  (let [tst-words       [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-        words-map       (group-by count tst-words)
-        word-list       (words-map 4)
-  ]
-    (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
-    (assert (= word-list      ["abcd" "xbcd" "xxcd" "xxxd"]  ))
   )
 )
 
