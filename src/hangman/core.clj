@@ -35,13 +35,6 @@
   [word-list]
   (group-by count word-list) )
 
-(defn to-word-array 
-  "Returns all words of the specified length as a 2D array (vector of vectors).
-  First index selects a given word, 2nd index selects chars from that word."
-  [word-list]
-  (vec
-    (map vec word-list) ))
-
 (defn num-cols
   "Given a list of words (seq of seqs), return the number of columns (2nd dimension)."
   [word-list]
@@ -212,13 +205,10 @@
     curr-len            4
     curr-words          (words-map curr-len)
       _ (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
-    word-array          (to-word-array  curr-words)
-      _ (assert (= word-array
-                   [[\a \b \c \d] [\x \b \c \d] [\x \x \c \d] [\x \x \x \d]] ))
 
     tgt-word            [ \x  \b  \c  \d  ]
     clue                [ nil \b  nil nil ]
-    keep-flag           (map #(guess-matches? % clue ) word-array )
+    keep-flag           (map #(guess-matches? % clue ) curr-words )
       _ (assert (= keep-flag [true true false false]))
     keep-words          (filter-with keep-flag curr-words)
       _ (assert (= keep-words ["abcd" "xbcd"] ))
@@ -239,9 +229,9 @@
   [curr-words clue guessed-chars]
   (let [keep-chars      (for [clue-char clue :when (not(nil? clue-char))] clue-char)
         fail-chars      (set/difference guessed-chars keep-chars)
-        keep-flag       (map #(guess-matches? % clue ) word-array )
-        fail-flag       (map #(guess-matches? % clue ) word-array )
-    keep-words      (filter-with keep-flag word-array) ] )
+        keep-flag       (map #(guess-matches? % clue ) curr-words )
+        fail-flag       (map #(guess-matches? % clue ) curr-words )
+    keep-words      (filter-with keep-flag curr-words) ] )
 )
 )
 
@@ -255,19 +245,18 @@
     (def words-map        (to-words-by-length word-seq) )
     (def curr-len         (count tgt-word) )
     (def curr-words       (words-map curr-len) )
-    (def word-array       (to-word-array  curr-words) )
     (def max-word-len     (apply max (keys words-map)) )
 
     (println)
     (println "************************************************************")
-    (println "word-array" (take 20 (map str/join word-array)) )
+    (println "curr-words" (take 20 (map str/join curr-words)) )
     (loop [ guessed-chars  #{}
             clue           (make-clue tgt-word guessed-chars) 
           ]
       (println )
       (let [
-        keep-flag       (map #(guess-matches? % clue ) word-array )
-        keep-words      (filter-with keep-flag word-array) ]
+        keep-flag       (map #(guess-matches? % clue) curr-words )
+        keep-words      (filter-with keep-flag curr-words) ]
           (println "clue: " (format-clue clue) 
                     "  keep-words(" (count keep-words) "):" 
                     (take 10 (map str/join keep-words)) "..." )
