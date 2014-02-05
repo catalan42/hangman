@@ -28,15 +28,46 @@
   "cat" "car" "can" "cob" "con" "cop" "cup" 
   "work" "love" "hate" "jobs" "able" "ball" ] )
 
-(defn guess-matches?
-  "Returns true if a guess matches the target word (a string). The guess value is a vector
-  of the same length with elements that are either a character or nil, where nil indicates
-  a wildcard that matches any character in the target word."
-  [word guess]
-  { :pre  [ (= (count word) (count guess)) 
+(defn format-clue
+  "Format the clue vector into a nice-looking string."
+  [clue]
+  (str/join 
+    (map  #(if (nil? %) "-" % )  clue) ))
+
+(defn make-clue
+  "Generate a clue given the target word and a vec of guessed letters. The clue is a
+  vector the length of the target word consisting of either letters (for correctly guessed
+  letters) or nil (for incorrect guesses)."
+  [tgt-word guessed-chars]
+  (vec (for [ letter tgt-word ] (guessed-chars letter)) ))
+
+(defn complement-char-class
+  "Generate the regex for the complement of a set of characters."
+  [not-chars]
+  (if (< 0 (count not-chars))
+    (str "[^" (str/join not-chars) "]" )  ;normal case
+    "."    ; degenerate case of no chars guessed yet - anything matches
+  ))
+
+(defn clue-to-regex
+  "Convert a clue string and set of guessed chars into a regex for filtering possible
+  matching words."
+  [clue-str guessed-chars]
+  (let [not-guessed-class   (complement-char-class guessed-chars)
+        patt-str   (str/join
+                     (for [clue-ch clue-str]
+                       (if (= clue-ch \-) not-guessed-class clue-ch) ))
+    ] patt-str ))
+
+(defn keep-word?
+  "Returns true if a clue matches the target word (a string). The clue value is a seq the
+  same length as the test word with elements that are either a character or nil, where nil
+  indicates a wildcard that matches any character in the target word."
+  [word clue guessed-chars]
+  { :pre  [ (= (count word) (count clue)) 
             (not-any? nil? word) ]
     :post [] }
-  (let [ pair-seq   (map vector guess word)  ; a sequence of pairs
+  (let [ pair-seq   (map vector clue word)  ; a sequence of pairs
          result     (every? #(or (=    (first %) (second %))
                                  (nil? (first %)) )
                       pair-seq) ]
@@ -87,37 +118,6 @@
         best-char     (apply max-key char-bits avail-chars) ]
     best-char ) )
 
-(defn make-clue
-  "Generate a clue given the target word and a vec of guessed letters. The clue is a
-  vector the length of the target word consisting of either letters (for correctly guessed
-  letters) or nil (for incorrect guesses)."
-  [tgt-word guessed-chars]
-  (vec (for [ letter tgt-word ] (guessed-chars letter)) ))
-
-(defn complement-char-class
-  "Generate the regex for the complement of a set of characters."
-  [not-chars]
-  (if (< 0 (count not-chars))
-    (str "[^" (str/join not-chars) "]" )  ;normal case
-    "."    ; degenerate case of no chars guessed yet - anything matches
-  ))
-
-(defn clue-to-regex
-  "Convert a clue string and set of guessed chars into a regex for filtering possible
-  matching words."
-  [clue-str guessed-chars]
-  (let [not-guessed-class   (complement-char-class guessed-chars)
-        patt-str   (str/join
-                     (for [clue-ch clue-str]
-                       (if (= clue-ch \-) not-guessed-class clue-ch) ))
-    ] patt-str ))
-
-(defn format-clue
-  "Format the clue vector into a nice-looking string."
-  [clue]
-  (str/join 
-    (map  #(if (nil? %) "-" % )  clue) ))
-
 (defn do-tests []
 
   ; Manipulation of strings/vectors/character seq's
@@ -141,19 +141,21 @@
     (assert      (re-find (re-pattern patt-str) "xbcd" ))
     (assert (not (re-find (re-pattern patt-str) "xxcd" )))
     (assert (not (re-find (re-pattern patt-str) "xxxd" )))
+
+    ; Test if keep word
+    (assert      (keep-word? "abcd" "abcd"             #{}            )  )
+    (assert      (keep-word? "abcd" [\a  nil nil nil]  #{}            )  )
+    (assert      (keep-word? "abcd" [\a  \b  nil nil]  #{}            )  )
+    (assert      (keep-word? "abcd" [nil nil nil nil]  #{}            )  )
+    (assert      (keep-word? "abcd" [\a  \b  nil nil]   guessed-chars )  )
+    (assert (not (keep-word? "abcd" [\a  nil nil nil]   guessed-chars ) ))
+
   )
-
-  ; Match guesses
-  (assert (guess-matches? "abcd" "abcd") )
-  (assert (guess-matches? "abcd" [\a \b \c \d]) )
-  (assert (guess-matches? "abcd" [nil nil nil nil]) )
-  (assert (guess-matches? "abcd" [\a nil nil nil]) )
-
   (let [tst-words       [ "abcd" "xbcd" "xxcd" "xxxd" ] 
         words-map       (group-by count tst-words)
         word-list       (words-map 4)
         clue            [ nil \b  nil nil ]
-        keep-words      (filter #(guess-matches? % clue ) word-list)
+        keep-words      (filter #(keep-word? % clue #{} ) word-list)
   ]
     (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
     (assert (= word-list      ["abcd" "xbcd" "xxcd" "xxxd"]  ))
@@ -178,7 +180,7 @@
             ]
         (println )
         (let [
-          keep-words      (filter #(guess-matches? % clue) word-list) ]
+          keep-words      (filter #(keep-word? % clue #{} ) word-list) ]
             (print "clue: " (format-clue clue) "  ")
             (show-info "keep-words" keep-words)
             (if (= 1 (count keep-words))
