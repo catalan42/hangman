@@ -192,6 +192,16 @@
   (vec 
     (for [ letter target-vec ] (guesses-set letter)) ))
 
+(defn clue-to-regex
+  "Convert a clue string and set of guessed chars into a regex for filtering possible
+  matching words."
+  [clue-str guessed-chars]
+  (let [not-guessed-chars   (str "[^" (str/join guessed-chars) "]" )
+        patt-str   (str/join
+                     (for [clue-ch clue-str]
+                       (if (= clue-ch \-) not-guessed-chars clue-ch) ))
+    ] patt-str ))
+
 (defn do-tests []
   ; Filtering one sequence with another
   (let [pred-vals5  [ true false 5 nil :a ] 
@@ -207,6 +217,46 @@
   (assert (= (vec "abcd")                [\a \b \c \d] ))
   (assert (= (str/join  (vec "abcd"))    "abcd" ))
   (assert (= (apply str (vec "abcd"))    "abcd" ))
+
+  ; Test regex stuff
+  (let [words   ["abcd" "xbcd" "xxcd" "xxxd"]
+        letters [\a \b \c \d] 
+        ]
+    (println "#1 --------------------")
+    (doseq [word words]
+      (println)
+      (print (str word ": ") )
+      (doseq [letter letters] 
+        (if (re-find (re-pattern (str letter)) word) (print letter) (print \-)) ) )
+    (println)
+
+    (println "#2 --------------------")
+    (let [used    #{\b \s}
+          clue    "a---"
+          char-class    (str "[^" (str/join used) "]" )
+            _ (println "char-class" char-class)
+          patt-str      (str/join (flatten [ char-class "b" char-class char-class ] ))
+            _ (println "patt-str" patt-str)
+      ]
+      (println "patt-str" patt-str)
+      (doseq [word words]
+        (println word ":" (re-find (re-pattern patt-str) word )) ))
+
+    (println "#3 --------------------")
+    (let [used    #{\b \s}
+          clue    "-b--"
+          patt-str      (clue-to-regex clue used)
+      ]
+      (println "clue    " clue)
+      (println "used    " used)
+      (println "patt-str" patt-str)
+      (println "matches:")
+      (doseq [word words]
+        (println "  " word ":" (re-find (re-pattern patt-str) word )) )
+    )
+
+    (println)
+  )
 
   ; Test array slicing functions
   (let [tstArr [ [:a :b :c] [1 2 3] [\a \b \c]] ]
