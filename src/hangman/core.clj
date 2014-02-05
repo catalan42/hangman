@@ -29,36 +29,6 @@
   "cat" "car" "can" "cob" "con" "cop" "cup" 
   "work" "love" "hate" "jobs" "able" "ball" ] )
 
-(defn filter-with-idx
-  "Returns values from data-seq where corresponding pred-seq elements are truthy.
-  An indexed-based implementation."
-  [pred-seq data-seq]
-  { :pre  [ (= (count pred-seq) (count data-seq)) ] 
-    :post [ (vector? %) ] }
-  (let [data-vec  (vec data-seq)
-        pred-vec  (vec pred-seq)
-        filt-fn   (fn [idx data-val] 
-                    (if (pred-vec idx) (data-vec idx) ))
-        filt-seq  (keep-indexed filt-fn data-vec) 
-  ] (vec filt-seq) ))
-
-(defn filter-with-seq
-  "Returns values from data-seq where corresponding pred-seq elements are truthy.
-  A sequence-based implementation"
-  [pred-seq data-seq]
-  (let [pred-data-pairs   (map vector pred-seq data-seq )
-        filt-seq          (filter #(first %) pred-data-pairs)
-        filt-data         (map second filt-seq) 
-  ] (vec filt-data) ))
-
-(defn filter-with 
-  "Returns values from data-seq where corresponding pred-seq elements are truthy."
-  [pred-seq data-seq]
-  { :pre  [ (= (count pred-seq) (count data-seq)) ] 
-    :post [ (vector? %) ] }
-  (filter-with-seq pred-seq data-seq) )
-
-
 (defn guess-matches?
   "Returns true if a guess matches the target word (a string). The guess value is a vector
   of the same length with elements that are either a character or nil, where nil indicates
@@ -150,15 +120,6 @@
     (map  #(if (nil? %) "-" % )  clue) ))
 
 (defn do-tests []
-  ; Filtering one sequence with another
-  (let [pred-vals5  [ true false 5 nil :a ] 
-        pred-vals8  [ true false true nil true nil false true ] 
-  ]
-    (assert (= (filter-with     pred-vals5 (range 5)) [0 2 4  ] ))
-    (assert (= (filter-with     pred-vals8 (range 8)) [0 2 4 7] )) 
-    (assert (= (filter-with-seq pred-vals8 (range 5)) [0 2 4  ] ))
-    (assert (= (filter-with-seq pred-vals8 (range 8)) [0 2 4 7] )) 
-  )
 
   ; Manipulation of strings/vectors/character seq's
   (assert (= (vec "abcd")                [\a \b \c \d] ))
