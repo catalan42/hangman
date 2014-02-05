@@ -282,7 +282,6 @@
   (let [keep-chars      (for [clue-char clue :when (not(nil? clue-char))] clue-char)
         fail-chars      (set/difference guessed-chars keep-chars)
         keep-flag       (map #(guess-matches? % clue ) word-array )
-
         fail-flag       (map #(guess-matches? % clue ) word-array )
     keep-words      (filter-with keep-flag word-array) ] )
 )
