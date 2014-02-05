@@ -160,7 +160,7 @@
     (main all-words) )
   ( [game-words]
     (do-tests)
-    (let [tgt-word      "uniformed"
+    (let [tgt-word      "comaker"
           words-map     (group-by count game-words)  ; map keyed by word length
           word-list     (words-map (count tgt-word)) ; words of correct length
       ]
