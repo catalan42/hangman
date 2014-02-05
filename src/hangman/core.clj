@@ -29,17 +29,6 @@
   "cat" "car" "can" "cob" "con" "cop" "cup" 
   "work" "love" "hate" "jobs" "able" "ball" ] )
 
-(defn to-words-by-length  
-  "Maps word length to word values.  Each key is a word length. Each value is a collection
-  of all words of that length.  Keys are absent if no words of that length are present."
-  [word-list]
-  (group-by count word-list) )
-
-(defn num-cols
-  "Given a list of words (seq of seqs), return the number of columns (2nd dimension)."
-  [word-list]
-  (count (first word-list)) )
-
 (defn filter-with-idx
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
   An indexed-based implementation."
@@ -133,17 +122,19 @@
     best-char ) )
 
 (defn make-clue
-  "Generate a clue given the target word and a vec of guessed letters."
-  [target-vec guesses-set]
-  (vec 
-    (for [ letter target-vec ] (guesses-set letter)) ))
+  "Generate a clue given the target word and a vec of guessed letters. The clue is a
+  vector the length of the target word consisting of either letters (for correctly guessed
+  letters) or nil (for incorrect guesses)."
+  [tgt-word guessed-chars]
+  (vec (for [ letter tgt-word ] (guessed-chars letter)) ))
 
 (defn complement-char-class
   "Generate the regex for the complement of a set of characters."
   [not-chars]
   (if (< 0 (count not-chars))
-    (str "[^" (str/join not-chars) "]" )
-    "." ))
+    (str "[^" (str/join not-chars) "]" )  ;normal case
+    "."    ; degenerate case of no chars guessed yet - anything matches
+  ))
 
 (defn clue-to-regex
   "Convert a clue string and set of guessed chars into a regex for filtering possible
@@ -154,6 +145,12 @@
                      (for [clue-ch clue-str]
                        (if (= clue-ch \-) not-guessed-class clue-ch) ))
     ] patt-str ))
+
+(defn format-clue
+  "Format the clue vector into a nice-looking string."
+  [clue]
+  (str/join 
+    (map  #(if (nil? %) "-" % )  clue) ))
 
 (defn do-tests []
   ; Filtering one sequence with another
@@ -199,11 +196,9 @@
 
   (let [
     tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-    words-map           (to-words-by-length tst-words)
+    words-map           (group-by count tst-words)
       _ (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
-
-    curr-len            4
-    word-list          (words-map curr-len)
+    word-list          (words-map 4)
       _ (assert (= word-list     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
 
     tgt-word            [ \x  \b  \c  \d  ]
@@ -217,29 +212,20 @@
   ] )
 )
 
-(defn format-clue
-  "Format the clue vector into a nice-looking string."
-  [clue]
-  (str/join 
-    (map  #(if (nil? %) "-" % )  clue) ))
-
 (defn main 
   ( [] 
     (main all-words) )
-  ( [word-seq]
+  ( [game-words]
     (do-tests)
-    (println "----------------------------------------")
-    (let [
-      tgt-word         "uniformed"
-      words-map        (to-words-by-length word-seq) 
-      curr-len         (count tgt-word)
-      word-list       (words-map curr-len)
+    (let [tgt-word      "uniformed"
+          words-map     (group-by count game-words)  ; map keyed by word length
+          word-list     (words-map (count tgt-word)) ; words of correct length
       ]
       (println)
       (println "************************************************************")
-      (println "word-list" (take 20 (map str/join word-list)) )
-      (loop [ guessed-chars  #{}
-              clue           (make-clue tgt-word guessed-chars) 
+      (println "word-list" (take 20 word-list) )
+      (loop [ guessed-chars   #{}
+              clue            (make-clue tgt-word guessed-chars) 
             ]
         (println )
         (let [
