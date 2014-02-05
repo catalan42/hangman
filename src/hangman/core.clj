@@ -224,13 +224,12 @@
             ]
         (println )
         (let [
-          keep-flag       (map #(guess-matches? % clue) word-list )
-          keep-words      (filter-with keep-flag word-list) ]
+          keep-words      (filter #(guess-matches? % clue) word-list) ]
             (println "clue: " (format-clue clue) 
                       "  keep-words(" (count keep-words) "):" 
                       (take 10 (map str/join keep-words)) "..." )
             (if (= 1 (count keep-words))
-              (let [final-guess (str/join (keep-words 0)) ]
+              (let [final-guess (str/join (first keep-words)) ]
                 (println (str "***** found word:  '" final-guess "'  *****") )
                 (println "matches:" (= final-guess tgt-word)) )
             ;else
