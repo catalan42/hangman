@@ -8,7 +8,7 @@
 
 (defn show-info
   "Print synopsis info about a sequence of strings"
-  [ seqVals seqName ]
+  [ seqName seqVals ]
   (println 
     (str seqName "("  (count seqVals) ") " )
         (take show-info-size (map #(str \" % \") seqVals)) ))
@@ -172,31 +172,29 @@
       ]
       (println)
       (println "************************************************************")
-      (println "word-list" (take 20 word-list) )
+      (show-info "word-list" word-list )
       (loop [ guessed-chars   #{}
               clue            (make-clue tgt-word guessed-chars) 
             ]
         (println )
         (let [
           keep-words      (filter #(guess-matches? % clue) word-list) ]
-            (println "clue: " (format-clue clue) 
-                      "  keep-words(" (count keep-words) "):" 
-                      (take 10 (map str/join keep-words)) "..." )
+            (print "clue: " (format-clue clue) "  ")
+            (show-info "keep-words" keep-words)
             (if (= 1 (count keep-words))
               (let [final-guess (str/join (first keep-words)) ]
                 (println (str "***** found word:  '" final-guess "'  *****") )
                 (println "matches:" (= final-guess tgt-word)) )
             ;else
-              (let [
-                new-guess       (make-guess keep-words guessed-chars)
-                guessed-chars   (conj guessed-chars new-guess)
-                new-clue        (make-clue tgt-word guessed-chars)
-                  _ (println "  new-guess" new-guess 
-                     "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
-                ]
-                (if (some nil? new-clue)
-                  (recur  (conj guessed-chars new-guess)  new-clue ) 
-                ))
+              (let [new-guess       (make-guess keep-words guessed-chars)
+                    guessed-chars   (conj guessed-chars new-guess)
+                    new-clue        (make-clue tgt-word guessed-chars)
+              ]
+                (println "  new-guess" new-guess 
+                  "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
+                (when (some nil? new-clue)
+                  (recur  (conj guessed-chars new-guess)  new-clue ) )
+              )
             )
         ))
 
