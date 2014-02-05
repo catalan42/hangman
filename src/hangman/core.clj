@@ -4,14 +4,7 @@
     [clojure.set     :as set]
   ) )
 
-(def show-info-size 10)
-
-(defn show-info
-  "Print synopsis info about a sequence of strings"
-  [ seqName seqVals ]
-  (println 
-    (str seqName "("  (count seqVals) ") " )
-        (take show-info-size (map #(str \" % \") seqVals)) ))
+(def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
 (def all-words   
   "A collection of all words for the hangman game."
@@ -19,7 +12,13 @@
        (str/split-lines )
        (map str/trim ) ))
 
-(def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
+(def  show-info-size 8)
+(defn show-info
+  "Print synopsis info about a sequence of strings"
+  [ seqName seqVals ]
+  (println 
+    (str seqName "("  (count seqVals) ") " )
+        (take show-info-size (map #(str \" % \") seqVals)) ))
 
 (defn make-clue
   "Generate a clue given the target word and a vec of guessed letters. The clue is a
@@ -64,14 +63,6 @@
     best-char ))
 
 (defn do-tests []
-  (let [tst-words       [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-        words-map       (group-by count tst-words)
-        word-list       (words-map 4)
-  ]
-    (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
-    (assert (= word-list      ["abcd" "xbcd" "xxcd" "xxxd"]  ))
-  )
-
   ; Test regex stuff
   (assert (= (complement-char-class #{})         "."      ))
   (assert (= (complement-char-class #{\a \b})    "[^ab]"  ))
@@ -79,8 +70,8 @@
         letters         [\a \b \c \d] 
         guessed-chars   #{\b \s}
         clue-str        "-b--"
-        not-char-class  (complement-char-class            guessed-chars)
-        patt-str        (clue-to-regex          clue-str  guessed-chars)
+        not-char-class  (complement-char-class    guessed-chars)
+        patt-str        (clue-to-regex  clue-str  guessed-chars)
   ]
     (assert (= not-char-class  "[^bs]"                 ))
     (assert (= patt-str        "[^bs]b[^bs][^bs]"      ))
@@ -98,35 +89,30 @@
   )
 )
 
+(defonce test-results (do-tests) )
+
 (defn main 
   ( [] 
-    (main all-words) )
-  ( [game-words]
-    (do-tests)
-    (let [tgt-word      "uniformed"
+    (let [game-words    all-words
+          tgt-word      "uniformed"
           words-map     (group-by count game-words)  ; map keyed by word length
           word-list     (words-map (count tgt-word)) ; words of correct length
       ]
-      (println)
-      (println "************************************************************")
-      (show-info "word-list" word-list )
       (loop [ guessed-chars   #{}
-              clue            (make-clue tgt-word guessed-chars) 
-            ]
-        (println )
+              clue            (make-clue tgt-word guessed-chars) ]
+        (println)
         (let [ keep-words (filter-words clue guessed-chars word-list) ]
-          (print "clue: " clue "  ")
           (show-info "keep-words" keep-words)
           (if (= 1 (count keep-words))
             (let [final-guess (str/join (first keep-words)) ]
-              (println (str "***** found word:  '" final-guess "'  *****") )
+              (println (str "***** found word:  '" final-guess 
+                "'   Guesses:  " (count guessed-chars) "  *****") )
               (println "matches:" (= final-guess tgt-word)) )
           ;else
             (let [new-guess       (make-guess keep-words guessed-chars)
                   guessed-chars   (conj guessed-chars new-guess)
-                  new-clue        (make-clue tgt-word guessed-chars)
-            ]
-              (println "  new-guess" new-guess 
+                  new-clue        (make-clue tgt-word guessed-chars) ]
+              (println "clue: " clue "  new-guess" new-guess 
                 "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
               (when (some #(= \- %) new-clue)
                 (recur  (conj guessed-chars new-guess)  new-clue ) )
@@ -138,4 +124,3 @@
 )
 (defn -main [& args] (apply main args) )
 
-; (defonce sanity-check (do-tests) )
