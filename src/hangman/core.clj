@@ -61,11 +61,8 @@
   { :pre  [ (= (count word) (count clue)) 
             (not-any? #(= \- %) word) ]
     :post [] }
-  (let [ pair-seq   (map vector clue word)  ; a sequence of pairs
-         result     (every? #(or (=    (first %) (second %))
-                                 (= \- (first %)) )
-                      pair-seq) ]
-    result ))
+  (let [ patt-str (clue-to-regex clue guessed-chars) ]
+    (re-find (re-pattern patt-str) word ) ))
 
 (defn word-has-letter?
   "Returns true if a letter appears in a word, else nil."
@@ -126,8 +123,8 @@
         letters         [\a \b \c \d] 
         guessed-chars   #{\b \s}
         clue-str        "-b--"
-        patt-str        (clue-to-regex          clue-str  guessed-chars)
         not-char-class  (complement-char-class            guessed-chars)
+        patt-str        (clue-to-regex          clue-str  guessed-chars)
   ]
     (assert (= not-char-class  "[^bs]"                 ))
     (assert (= patt-str        "[^bs]b[^bs][^bs]"      ))
