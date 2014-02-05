@@ -32,42 +32,20 @@
 (defn to-words-by-length  
   "Maps word length to word values.  Each key is a word length. Each value is a collection
   of all words of that length.  Keys are absent if no words of that length are present."
-  [word-seq]
-  (group-by count word-seq) )
+  [word-list]
+  (group-by count word-list) )
 
 (defn to-word-array 
   "Returns all words of the specified length as a 2D array (vector of vectors).
   First index selects a given word, 2nd index selects chars from that word."
-  [word-seq]
-  (vec
-    (map vec word-seq) ))
-
-(defn num-rows
-  "Given a list of words (seq of seqs), return the number of rows (1st dimension)."
   [word-list]
-  (count word-list) )
+  (vec
+    (map vec word-list) ))
 
 (defn num-cols
   "Given a list of words (seq of seqs), return the number of columns (2nd dimension)."
   [word-list]
   (count (first word-list)) )
-
-(defn get-array-col
-  "Given a list of words (seq of seqs), return a vector of elements 
-  from the specified column."
-  [word-list col-idx]
-  { :pre  [ (integer? col-idx) ]
-    :post [] }
-  (reduce #(conj %1 (nth %2 col-idx))
-          [] word-list ) )
-
-(defn get-array-row
-  "Given a list of words (seq of seqs), return a vector of elements 
-  from the specified row."
-  [word-list row-idx]
-  { :pre  [ (integer? row-idx) ]
-    :post [] }
-  (nth word-list row-idx) )
 
 (defn filter-with-idx
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
@@ -155,9 +133,9 @@
 (defn make-guess
   "Generate the next guess letter by calculating the bits of information for each possible
   guess letter. "
-  [keep-words used-chars]
+  [word-list used-chars]
   (let [avail-chars   (set/difference all-letters used-chars)
-        char-bits     (zipmap avail-chars (map #(calc-info-bits keep-words %) avail-chars) )
+        char-bits     (zipmap avail-chars (map #(calc-info-bits word-list %) avail-chars) )
         best-char     (apply max-key char-bits avail-chars) ]
     best-char ) )
 
@@ -218,16 +196,6 @@
     (assert (not (re-find (re-pattern patt-str) "xxcd" )))
     (assert (not (re-find (re-pattern patt-str) "xxxd" )))
     (println)
-  )
-
-  ; Test array slicing functions
-  (let [tstArr [ [:a :b :c] [1 2 3] [\a \b \c]] ]
-    (assert (= (get-array-row tstArr 0) [:a :b :c] ))
-    (assert (= (get-array-row tstArr 1) [ 1  2  3] ))
-    (assert (= (get-array-row tstArr 2) [\a \b \c] ))
-    (assert (= (get-array-col tstArr 0) [:a  1 \a] ))
-    (assert (= (get-array-col tstArr 1) [:b  2 \b] ))
-    (assert (= (get-array-col tstArr 2) [:c  3 \c] ))
   )
 
   ; Match guesses
@@ -303,7 +271,7 @@
           (println "clue: " (format-clue clue) 
                     "  keep-words(" (count keep-words) "):" 
                     (take 10 (map str/join keep-words)) "..." )
-          (if (= 1 (num-rows keep-words))
+          (if (= 1 (count keep-words))
             (let [final-guess (str/join (keep-words 0)) ]
               (println (str "***** found word:  '" final-guess "'  *****") )
               (println "matches:" (= final-guess tgt-word)) )
