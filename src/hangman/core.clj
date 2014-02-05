@@ -33,7 +33,7 @@
   vector the length of the target word consisting of either letters (for correctly guessed
   letters) or nil (for incorrect guesses)."
   [tgt-word guessed-chars]
-  (vec (for [ letter tgt-word ] (get guessed-chars letter \- ))) )
+  (str/join (for [ letter tgt-word ] (get guessed-chars letter \- ))) )
 
 (defn complement-char-class
   "Generate the regex for the complement of a set of characters."
@@ -62,7 +62,8 @@
             (not-any? #(= \- %) word) ]
     :post [] }
   (let [ patt-str (clue-to-regex clue guessed-chars) ]
-    (re-find (re-pattern patt-str) word ) ))
+    (re-find (re-pattern patt-str) word )
+   ))
 
 (defn word-has-letter?
   "Returns true if a letter appears in a word, else nil."
@@ -134,19 +135,19 @@
     (assert (not (re-find (re-pattern patt-str) "xxxd" )))
 
     ; Test if keep word
-    (assert      (keep-word? "abcd" "abcd"             #{}            )  )
-    (assert      (keep-word? "abcd" "a---"  #{}            )  )
-    (assert      (keep-word? "abcd" "ab--"  #{}            )  )
-    (assert      (keep-word? "abcd" "----"  #{}            )  )
-    (assert      (keep-word? "abcd" "ab--"   guessed-chars )  )
-    (assert (not (keep-word? "abcd" "a---"   guessed-chars ) ))
+    (assert      (keep-word? "abcd" "----"  #{}      )  )
+    (assert      (keep-word? "abcd" "abcd"  #{}      )  )
+    (assert      (keep-word? "abcd" "a---"  #{}      )  )
+    (assert      (keep-word? "abcd" "ab--"  #{}      )  )
+    (assert      (keep-word? "abcd" "-b--"  #{\b \s} )  )
+    (assert (not (keep-word? "abcd" "a---"  #{\b \s} ) ))
 
   )
   (let [tst-words       [ "abcd" "xbcd" "xxcd" "xxxd" ] 
         words-map       (group-by count tst-words)
         word-list       (words-map 4)
         clue            "-b--"
-        keep-words      (filter #(keep-word? % clue #{} ) word-list)
+        keep-words      (filter #(keep-word? % clue #{\b} ) word-list)
   ]
     (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
     (assert (= word-list      ["abcd" "xbcd" "xxcd" "xxxd"]  ))
@@ -171,7 +172,7 @@
             ]
         (println )
         (let [
-          keep-words      (filter #(keep-word? % clue #{} ) word-list) ]
+          keep-words      (filter #(keep-word? % clue guessed-chars ) word-list) ]
             (print "clue: " clue "  ")
             (show-info "keep-words" keep-words)
             (if (= 1 (count keep-words))
