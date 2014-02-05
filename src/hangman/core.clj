@@ -203,14 +203,14 @@
       _ (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
 
     curr-len            4
-    curr-words          (words-map curr-len)
-      _ (assert (= curr-words     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
+    word-list          (words-map curr-len)
+      _ (assert (= word-list     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
 
     tgt-word            [ \x  \b  \c  \d  ]
     clue                [ nil \b  nil nil ]
-    keep-flag           (map #(guess-matches? % clue ) curr-words )
+    keep-flag           (map #(guess-matches? % clue ) word-list )
       _ (assert (= keep-flag [true true false false]))
-    keep-words          (filter-with keep-flag curr-words)
+    keep-words          (filter-with keep-flag word-list)
       _ (assert (= keep-words ["abcd" "xbcd"] ))
     guessed-chars       #{ \b }
       _ (assert (= guessed-chars #{\b} ))
@@ -223,62 +223,50 @@
   (str/join 
     (map  #(if (nil? %) "-" % )  clue) ))
 
-(comment
-(defn filter-words
-  "Calculates which words are possible matches given the guessed letters and clue string."
-  [curr-words clue guessed-chars]
-  (let [keep-chars      (for [clue-char clue :when (not(nil? clue-char))] clue-char)
-        fail-chars      (set/difference guessed-chars keep-chars)
-        keep-flag       (map #(guess-matches? % clue ) curr-words )
-        fail-flag       (map #(guess-matches? % clue ) curr-words )
-    keep-words      (filter-with keep-flag curr-words) ] )
-)
-)
-
 (defn main 
   ( [] 
     (main all-words) )
   ( [word-seq]
     (do-tests)
     (println "----------------------------------------")
-    (def tgt-word         "uniformed")
-    (def words-map        (to-words-by-length word-seq) )
-    (def curr-len         (count tgt-word) )
-    (def curr-words       (words-map curr-len) )
-    (def max-word-len     (apply max (keys words-map)) )
+    (let [
+      tgt-word         "uniformed"
+      words-map        (to-words-by-length word-seq) 
+      curr-len         (count tgt-word)
+      word-list       (words-map curr-len)
+      ]
+      (println)
+      (println "************************************************************")
+      (println "word-list" (take 20 (map str/join word-list)) )
+      (loop [ guessed-chars  #{}
+              clue           (make-clue tgt-word guessed-chars) 
+            ]
+        (println )
+        (let [
+          keep-flag       (map #(guess-matches? % clue) word-list )
+          keep-words      (filter-with keep-flag word-list) ]
+            (println "clue: " (format-clue clue) 
+                      "  keep-words(" (count keep-words) "):" 
+                      (take 10 (map str/join keep-words)) "..." )
+            (if (= 1 (count keep-words))
+              (let [final-guess (str/join (keep-words 0)) ]
+                (println (str "***** found word:  '" final-guess "'  *****") )
+                (println "matches:" (= final-guess tgt-word)) )
+            ;else
+              (let [
+                new-guess       (make-guess keep-words guessed-chars)
+                guessed-chars   (conj guessed-chars new-guess)
+                new-clue        (make-clue tgt-word guessed-chars)
+                  _ (println "  new-guess" new-guess 
+                     "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
+                ]
+                (if (some nil? new-clue)
+                  (recur  (conj guessed-chars new-guess)  new-clue ) 
+                ))
+            )
+        ))
 
-    (println)
-    (println "************************************************************")
-    (println "curr-words" (take 20 (map str/join curr-words)) )
-    (loop [ guessed-chars  #{}
-            clue           (make-clue tgt-word guessed-chars) 
-          ]
-      (println )
-      (let [
-        keep-flag       (map #(guess-matches? % clue) curr-words )
-        keep-words      (filter-with keep-flag curr-words) ]
-          (println "clue: " (format-clue clue) 
-                    "  keep-words(" (count keep-words) "):" 
-                    (take 10 (map str/join keep-words)) "..." )
-          (if (= 1 (count keep-words))
-            (let [final-guess (str/join (keep-words 0)) ]
-              (println (str "***** found word:  '" final-guess "'  *****") )
-              (println "matches:" (= final-guess tgt-word)) )
-          ;else
-            (let [
-              new-guess       (make-guess keep-words guessed-chars)
-              guessed-chars   (conj guessed-chars new-guess)
-              new-clue        (make-clue tgt-word guessed-chars)
-                _ (println "  new-guess" new-guess 
-                   "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
-              ]
-              (if (some nil? new-clue)
-                (recur  (conj guessed-chars new-guess)  new-clue ) 
-              ))
-          )
-      ))
-
-  )
+  ))
 )
 (defn -main [& args] (apply main args) )
 
