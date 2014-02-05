@@ -101,7 +101,7 @@
 
 (defn main 
   ( [] 
-    (let [tgt-word      "toxics"
+    (let [tgt-word      "stereoisomers"
           game-words    all-words
           words-map     (group-by count game-words)  ; map keyed by word length
           word-list     (words-map (count tgt-word)) ; words of correct length
