@@ -53,69 +53,28 @@
                        (if (= clue-ch \-) not-guessed-class clue-ch) ))
     ] patt-str ))
 
-(defn keep-word?
-  "Returns true if a clue matches the target word (a string). The clue value is a seq the
-  same length as the test word with elements that are either a character or nil, where nil
-  indicates a wildcard that matches any character in the target word."
-  [word clue guessed-chars]
-  { :pre  [ (= (count word) (count clue)) 
-            (not-any? #(= \- %) word) ]
-    :post [] }
-  (let [ patt-str (clue-to-regex clue guessed-chars) ]
-    (re-find (re-pattern patt-str) word )
-   ))
+(defn filter-words 
+  "Filter words retaining only those that are possible matches given the current clue and
+  already guessed chars."
+  [clue guessed-chars words]
+  (let [patt-str      (clue-to-regex clue guessed-chars) 
+        re-patt       (re-pattern patt-str)
+        keep-words    (filter #(re-find re-patt %) words ) ]
+    keep-words ))
 
-(defn word-has-letter?
-  "Returns true if a letter appears in a word, else nil."
-  [word letter]
-  (some #(= % letter) word) )
-
-(def ^:const log-2 (Math/log 2) )
-
-(defn log-base-2
-  "Calculates the base-2 logarithm."
-  [val]
-  { :pre  [ (< 0 val) ]
-    :post [] }
-  (/ (Math/log val) log-2) )
-
-(defn calc-entropy
-  "Calculates the entropy of a binary probability value."
-  [prob]
-  { :pre  [ (<= 0 prob 1) ]
-    :post [ (<= 0 % ) ] }
-  (let [prob-orig (double prob)
-        prob-comp (- 1.0 prob-orig) ]  ; complement of prob-orig
-    (cond
-      (= 0.0 prob-orig) 0  ; avoid trying to compute log(0)
-      (= 1.0 prob-orig) 0  ; avoid trying to compute log(0)
-      :normal 
-          (+ (- (* prob-orig (log-base-2 prob-orig  )))
-             (- (* prob-comp (log-base-2 prob-comp  ))) ) )))
-
-(defn calc-info-bits
-  "Calculates the number of bits of information gained for the guess-letter."
-  [words guess-letter]
-  (let [total-words     (count words)
-        match-words     (count (filter #(word-has-letter? % guess-letter) words) )
-        word-ratio      (/ (double match-words) (double total-words)) ]
-    (calc-entropy word-ratio) ))
-
-(defn make-guess
-  "Generate the next guess letter by calculating the bits of information for each possible
-  guess letter. "
+(defn make-guess-1
+  "Choose the most numerous letter"
   [words used-chars]
   (let [avail-chars   (set/difference all-letters used-chars)
-        char-bits     (zipmap avail-chars (map #(calc-info-bits words %) avail-chars) )
-        best-char     (apply max-key char-bits avail-chars) ]
-    best-char ) )
+        char-freqs    (frequencies (str/join words))
+        best-char     (apply max-key #(get char-freqs % -1) avail-chars) ]
+    best-char ))
+
+(defn make-guess
+  [words used-chars]
+  (make-guess-1 words used-chars) )
 
 (defn do-tests []
-
-  ; Manipulation of strings/vectors/character seq's
-  (assert (= (vec "abcd")  [\a \b \c \d]             ))
-  (assert (= (str/join     [\a \b \c \d] )    "abcd" ))
-  (assert (= (apply str    [\a \b \c \d] )    "abcd" ))
 
   ; Test regex stuff
   (assert (= (complement-char-class #{})         "."      ))
@@ -135,23 +94,19 @@
     (assert (not (re-find (re-pattern patt-str) "xxxd" )))
 
     ; Test if keep word
-    (assert      (keep-word? "abcd" "----"  #{}      )  )
-    (assert      (keep-word? "abcd" "abcd"  #{}      )  )
-    (assert      (keep-word? "abcd" "a---"  #{}      )  )
-    (assert      (keep-word? "abcd" "ab--"  #{}      )  )
-    (assert      (keep-word? "abcd" "-b--"  #{\b \s} )  )
-    (assert (not (keep-word? "abcd" "a---"  #{\b \s} ) ))
-
+    (assert (= (filter-words "----"  #{}      ["abcd"] ) ["abcd"] ))
+    (assert (= (filter-words "abcd"  #{}      ["abcd"] ) ["abcd"] ))
+    (assert (= (filter-words "a---"  #{}      ["abcd"] ) ["abcd"] ))
+    (assert (= (filter-words "ab--"  #{}      ["abcd"] ) ["abcd"] ))
+    (assert (= (filter-words "-b--"  #{\b \s} ["abcd"] ) ["abcd"] ))
+    (assert (= (filter-words "a---"  #{\b \s} ["abcd"] ) []       ))
   )
   (let [tst-words       [ "abcd" "xbcd" "xxcd" "xxxd" ] 
         words-map       (group-by count tst-words)
         word-list       (words-map 4)
-        clue            "-b--"
-        keep-words      (filter #(keep-word? % clue #{\b} ) word-list)
   ]
     (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
     (assert (= word-list      ["abcd" "xbcd" "xxcd" "xxxd"]  ))
-    (assert (= keep-words     ["abcd" "xbcd"]                ))
   )
 )
 
@@ -171,25 +126,24 @@
               clue            (make-clue tgt-word guessed-chars) 
             ]
         (println )
-        (let [
-          keep-words      (filter #(keep-word? % clue guessed-chars ) word-list) ]
-            (print "clue: " clue "  ")
-            (show-info "keep-words" keep-words)
-            (if (= 1 (count keep-words))
-              (let [final-guess (str/join (first keep-words)) ]
-                (println (str "***** found word:  '" final-guess "'  *****") )
-                (println "matches:" (= final-guess tgt-word)) )
-            ;else
-              (let [new-guess       (make-guess keep-words guessed-chars)
-                    guessed-chars   (conj guessed-chars new-guess)
-                    new-clue        (make-clue tgt-word guessed-chars)
-              ]
-                (println "  new-guess" new-guess 
-                  "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
-                (when (some #(= \- %) new-clue)
-                  (recur  (conj guessed-chars new-guess)  new-clue ) )
-              )
+        (let [ keep-words (filter-words clue guessed-chars word-list) ]
+          (print "clue: " clue "  ")
+          (show-info "keep-words" keep-words)
+          (if (= 1 (count keep-words))
+            (let [final-guess (str/join (first keep-words)) ]
+              (println (str "***** found word:  '" final-guess "'  *****") )
+              (println "matches:" (= final-guess tgt-word)) )
+          ;else
+            (let [new-guess       (make-guess keep-words guessed-chars)
+                  guessed-chars   (conj guessed-chars new-guess)
+                  new-clue        (make-clue tgt-word guessed-chars)
+            ]
+              (println "  new-guess" new-guess 
+                "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
+              (when (some #(= \- %) new-clue)
+                (recur  (conj guessed-chars new-guess)  new-clue ) )
             )
+          )
         ))
 
   ))
