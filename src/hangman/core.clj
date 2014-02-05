@@ -69,16 +69,6 @@
     :post [] }
   (nth word-array row-idx) )
 
-(defn to-freqs-by-col
-  "For each column of a 2D array (seq of seqs), computes an element frequency map. Returns
-  as a vector indexed by column."
-  [word-array]
-  { :pre  [ (< 0 (num-rows word-array) )
-            (< 0 (num-cols word-array) ) ] 
-    :post [] }
-  (vec (for [idx (range 0 (num-cols word-array)) ]
-         (frequencies (get-array-col word-array idx)) )))
-
 (defn filter-with-idx
   "Returns values from data-seq where corresponding pred-seq elements are truthy.
   An indexed-based implementation."
@@ -171,17 +161,6 @@
         best-char     (apply max-key char-bits avail-chars) ]
     best-char ) )
 
-(defn make-guess-freq
-  "Generate the next guess letter, based on letter frequencies in the surviving words. "
-  [keep-words used-chars]
-  (let [
-    col-char-freqs  (to-freqs-by-col keep-words)
-    all-char-freqs    (apply merge-with + col-char-freqs)
-    avail-chars       (set/difference (set(keys all-char-freqs)) used-chars)
-      ; _ (println "avail-chars" avail-chars )
-    max-avail-char    (apply max-key all-char-freqs avail-chars ) 
-  ] max-avail-char ) )
-
 (defn make-clue
   "Generate a clue given the target word and a vec of guessed letters."
   [target-vec guesses-set]
@@ -251,16 +230,6 @@
     (assert (= (get-array-col tstArr 2) [:c  3 \c] ))
   )
 
-  ; Use of (frequencies...) and (merge-with...)
-  (assert (= (frequencies "abbccc")          
-             {\a 1, \b 2, \c 3} ))
-  (assert (= (frequencies ["abc" "bc" "c"])  
-             {"abc" 1 "bc" 1 "c" 1} ))
-  (assert (= (map frequencies ["abc" "bc" "c"])
-             [ {\a 1, \b 1, \c 1} {\b 1, \c 1} {\c 1} ] ))
-  (assert (= (apply merge-with + (map frequencies ["abc" "bc" "c"]) )
-             {\a 1 \b 2 \c 3} ))
-
   ; Match guesses
   (assert (guess-matches? "abcd" "abcd") )
   (assert (guess-matches? "abcd" [\a \b \c \d]) )
@@ -279,13 +248,6 @@
       _ (assert (= word-array
                    [[\a \b \c \d] [\x \b \c \d] [\x \x \c \d] [\x \x \x \d]] ))
 
-    col-char-freqs      (to-freqs-by-col word-array)
-      _ (assert (= col-char-freqs [{\a 1, \x 3} {\b 2, \x 2} {\c 3, \x 1} {\d 4}] ))
-    all-char-freqs      (apply merge-with + col-char-freqs)
-      _ (assert (= all-char-freqs { \a 1, \b 2, \c 3, \d 4, \x 6} )) 
-    max-freq-val        (apply max-key all-char-freqs (keys all-char-freqs) )
-      _ (assert (= max-freq-val \x ))
-
     tgt-word            [ \x  \b  \c  \d  ]
     clue                [ nil \b  nil nil ]
     keep-flag           (map #(guess-matches? % clue ) word-array )
@@ -294,12 +256,6 @@
       _ (assert (= keep-words ["abcd" "xbcd"] ))
     guessed-chars       #{ \b }
       _ (assert (= guessed-chars #{\b} ))
-    new-guess           (make-guess-freq word-array guessed-chars)
-      _ (assert (= new-guess \x ))
-    guessed-chars       (conj guessed-chars new-guess)
-      _ (assert (= guessed-chars #{\b \x} ))
-    new-clue            (make-clue tgt-word guessed-chars)
-      _ (assert (= new-clue [\x \b nil nil] ))
   ] )
 )
 
