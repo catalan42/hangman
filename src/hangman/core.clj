@@ -4,10 +4,9 @@
     [clojure.set     :as set]
   ) )
 
-
 (def show-info-size 10)
 
-(defn show-info 
+(defn show-info
   "Print synopsis info about a sequence of strings"
   [ seqVals seqName ]
   (println 
