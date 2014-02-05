@@ -121,9 +121,9 @@
 (defn do-tests []
 
   ; Manipulation of strings/vectors/character seq's
-  (assert (= (vec "abcd")                [\a \b \c \d] ))
-  (assert (= (str/join  (vec "abcd"))    "abcd" ))
-  (assert (= (apply str (vec "abcd"))    "abcd" ))
+  (assert (= (vec "abcd")  [\a \b \c \d]             ))
+  (assert (= (str/join     [\a \b \c \d] )    "abcd" ))
+  (assert (= (apply str    [\a \b \c \d] )    "abcd" ))
 
   ; Test regex stuff
   (assert (= (complement-char-class #{})         "."      ))
@@ -132,17 +132,15 @@
         letters         [\a \b \c \d] 
         guessed-chars   #{\b \s}
         clue-str        "-b--"
-
-        not-char-class  (complement-char-class guessed-chars)
-        patt-str        (clue-to-regex clue-str guessed-chars)
-    ]
+        patt-str        (clue-to-regex          clue-str  guessed-chars)
+        not-char-class  (complement-char-class            guessed-chars)
+  ]
     (assert (= not-char-class  "[^bs]"                 ))
     (assert (= patt-str        "[^bs]b[^bs][^bs]"      ))
     (assert      (re-find (re-pattern patt-str) "abcd" ))
     (assert      (re-find (re-pattern patt-str) "xbcd" ))
     (assert (not (re-find (re-pattern patt-str) "xxcd" )))
     (assert (not (re-find (re-pattern patt-str) "xxxd" )))
-    (println)
   )
 
   ; Match guesses
@@ -151,20 +149,16 @@
   (assert (guess-matches? "abcd" [nil nil nil nil]) )
   (assert (guess-matches? "abcd" [\a nil nil nil]) )
 
-  (let [
-    tst-words [ "abcd" "xbcd" "xxcd" "xxxd" ] 
-    words-map           (group-by count tst-words)
-      _ (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
-    word-list          (words-map 4)
-      _ (assert (= word-list     ["abcd" "xbcd" "xxcd" "xxxd"]  ))
-
-    tgt-word       [ \x  \b  \c  \d  ]
-    clue           [ nil \b  nil nil ]
-    keep-words     (filter #(guess-matches? % clue ) word-list)
-      _ (assert (= keep-words ["abcd" "xbcd"] ))
-    guessed-chars       #{ \b }
-      _ (assert (= guessed-chars #{\b} ))
-  ] )
+  (let [tst-words       [ "abcd" "xbcd" "xxcd" "xxxd" ] 
+        words-map       (group-by count tst-words)
+        word-list       (words-map 4)
+        clue            [ nil \b  nil nil ]
+        keep-words      (filter #(guess-matches? % clue ) word-list)
+  ]
+    (assert (= words-map   {4 ["abcd" "xbcd" "xxcd" "xxxd"]} ))
+    (assert (= word-list      ["abcd" "xbcd" "xxcd" "xxxd"]  ))
+    (assert (= keep-words     ["abcd" "xbcd"]                ))
+  )
 )
 
 (defn main 
