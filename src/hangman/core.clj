@@ -4,7 +4,8 @@
     [clojure.set     :as set]
   ) 
   ; Import classes from the Java "default" package.  
-  (:import GuessingStrategy  Guess  GuessLetter  GuessWord  HangmanGame)
+  (:import GuessingStrategy  Guess  GuessLetter  GuessWord  
+           HangmanGame HangmanUtils )
     ;********************************************************************************
     ; NOTE:  For some reason, class HangmanGame was not declared public (originally it had
     ; "package" access), despite all other classes/interfaces being public.  This caused a
@@ -14,7 +15,7 @@
 )
 
 ;----------------------------------------------------------------------
-; Simple logging tools for demo. Replace in production
+; Simple logging tools for demo. Replace with log4j or similar in production.
 ;
 (def ^:const LOG-LEVEL-ERROR    5 )
 (def ^:const LOG-LEVEL-WARN     4 )
@@ -39,8 +40,9 @@
 (defn log-extra  [& msgs] (apply write-to-log  LOG-LEVEL-EXTRA    msgs ))
 (defn log-dbg    [& msgs] (apply write-to-log  LOG-LEVEL-DEBUG    msgs ))
 
+; End logging tools
 ;----------------------------------------------------------------------
-;
+
 (def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
 (def baseline-scores {
