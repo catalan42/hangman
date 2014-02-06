@@ -2,7 +2,11 @@
   (:require
     [clojure.string  :as str]
     [clojure.set     :as set]
-  ) )
+  ) 
+  ; Import classes from the Java "default" package
+  (:import GuessingStrategy  Guess  GuessLetter  GuessWord  HangmanGame)
+)
+
 
 ;----------------------------------------------------------------------
 ; Simple logging tools for demo. Replace in production
@@ -180,6 +184,26 @@
             (recur  (conj guessed-chars new-guess)  new-clue )
           )
         ) ))))
+
+(def null-guess
+  (reify
+    Guess
+    (makeGuess [this hangmanGame]
+      (println "Guess.makeGuess() - enter" )
+      (println "Guess.makeGuess() - exit"  ) 
+    )))
+
+(def get-strategy
+  (reify
+    GuessingStrategy
+    (nextGuess [this hangmanGame]
+      (println "GuessingStrategy.nextGuess() - enter" )
+      (println "GuessingStrategy.nextGuess() - exit"  ) 
+      null-guess ; return value
+    )))
+
+(comment
+)
 
 (def baseline-scores {
       "comaker" 25 "cumulate" 9 "eruptive" 5 "factual" 9 "monadism" 8 
