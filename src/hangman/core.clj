@@ -133,10 +133,11 @@
     char-freqs    (if (= 0      (count guessed-chars))
                     (char-freqs-by-wordlen (count (first words)) )
                     (frequencies (str/join words)) )
-
     avail-chars   (set/difference all-letters guessed-chars)
     best-char     (apply max-key #(get char-freqs % -1) avail-chars) 
-  ] best-char ))
+  ] 
+    best-char 
+  ))
 
 (defn do-tests []
   ; Test regex stuff
@@ -203,28 +204,40 @@
     (HangmanUtils/isGameLost     hangmanGame ) "game-lost"
     (HangmanUtils/isKeepGuessing hangmanGame ) "keep-guessing" ))
 
+(defn get-game-guessed-chars
+  "Get a Clojure set of chars that have been guessed so far in the game."
+  [hangmanGame]
+  ; NOTE:  str/lower-case expects and returns a string. Hence we must use (apply str ...)
+  ; to the java set to generate a single (possibly zero-length) string before calling
+  ; str/lower-case.  Since set expects a collection, it is used without "apply".
+  (let [guessed-chars  (->> (.getAllGuessedLetters hangmanGame)
+                            (apply str )
+                            (str/lower-case )
+                            (set ) )
+       ]
+        
+      guessed-chars
+  ))
+
+(defn getGameClue
+  "Returns a nicely formatted clue string from the HangmanGame."
+  [hangmanGame]
+  (str/lower-case (.getGuessedSoFar hangmanGame)) )
+
 (defn get-strategy
   "Return a GuessingStrategy object instance."
   []
   (reify
     GuessingStrategy
     (nextGuess [this hangmanGame]
-      (println "GuessingStrategy.nextGuess() - enter" )
       (let [
-        clue       (str/lower-case (.getGuessedSoFar hangmanGame))
-          _ (println "clue" clue "  " (statusString hangmanGame) )
-        guessed-chars  (into #{} (.getAllGuessedLetters hangmanGame) )
-          _ (println "guessed-chars" guessed-chars )
-        word-list (words-by-length (count clue)) ; words of correct length
-        keep-words  (filter-words clue guessed-chars word-list)
-          _ (show-info "keep-words" keep-words)
-        new-guess  (make-guess keep-words guessed-chars)
-          _ (println "new-guess" new-guess)
-        guessLetter (GuessLetter. new-guess)
-          _ (println "guessLetter" guessLetter)
+        clue            (getGameClue hangmanGame)
+        guessed-chars   (get-game-guessed-chars hangmanGame)
+        word-list       (words-by-length (count clue)) ; words of correct length
+        keep-words      (filter-words clue guessed-chars word-list)
+        new-guess       (make-guess keep-words guessed-chars)
       ]
-        (println "GuessingStrategy.nextGuess() - exit"  ) 
-        guessLetter ; return value
+        (GuessLetter. new-guess) ; return value
       )
     )))
 
@@ -232,26 +245,24 @@
   "Driver the java interface version of the game."
   ( [] (driver "resources/test.txt") )
   ( [test-words-filename]
-    (println)
-    (println "----------------------------------------------------------------------")
-    (println "driver - enter")
+    (log-extra)
 
     (let [tst-words       (->> (slurp test-words-filename)
                                (str/split-lines)
                                (map str/trim) )
           strategy        (get-strategy)
           hangmanGame     (HangmanGame. "test" 20)
-          guess           (.nextGuess strategy hangmanGame) 
     ]
-      (println "tst-words" tst-words)
-      (.makeGuess guess hangmanGame)
-      (println "made guess" guess)
-      (println "gameStatus" (statusString hangmanGame) )
+      (log-extra "Clue:"    (getGameClue hangmanGame) 
+               "  Status:"  (statusString hangmanGame) )
+      (while (HangmanUtils/isKeepGuessing hangmanGame)
+        (let [ guess     (.nextGuess strategy hangmanGame) ]
+          (.makeGuess guess hangmanGame)
+          (log-extra "Clue:"    (getGameClue hangmanGame) 
+                   "  Status:"  (statusString hangmanGame) )))
     )
-
-    (println "driver - exit")
+    (log-extra)
   ))
-
 
 (defn main 
   [] 
