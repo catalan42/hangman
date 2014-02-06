@@ -20,10 +20,10 @@
 (def ^:const LOG-LEVEL-WARN     4 )
 (def ^:const LOG-LEVEL-NORMAL   3 )
 (def ^:const LOG-LEVEL-EXTRA    2 )
-(def ^:const LOG-LEVEL-DBG      1 )
+(def ^:const LOG-LEVEL-DEBUG    1 )
 
 (def logging-enabled           true )
-(def logging-min-level         LOG-LEVEL-NORMAL )
+(def logging-min-level         LOG-LEVEL-DEBUG )
 
 (defn write-to-log
   "Write log msg to console for debugging."
@@ -33,15 +33,20 @@
     (apply println msgs ) ))
 
 ; Convenience functions
-(defn log-err   [& msgs] (apply write-to-log  LOG-LEVEL-ERROR    msgs ))
-(defn log-warn  [& msgs] (apply write-to-log  LOG-LEVEL-WARN     msgs ))
-(defn log-msg   [& msgs] (apply write-to-log  LOG-LEVEL-NORMAL   msgs ))
-(defn log-extra [& msgs] (apply write-to-log  LOG-LEVEL-EXTRA    msgs ))
-(defn log-dbg   [& msgs] (apply write-to-log  LOG-LEVEL-DBG      msgs ))
+(defn log-error  [& msgs] (apply write-to-log  LOG-LEVEL-ERROR    msgs ))
+(defn log-warn   [& msgs] (apply write-to-log  LOG-LEVEL-WARN     msgs ))
+(defn log-msg    [& msgs] (apply write-to-log  LOG-LEVEL-NORMAL   msgs ))
+(defn log-extra  [& msgs] (apply write-to-log  LOG-LEVEL-EXTRA    msgs ))
+(defn log-dbg    [& msgs] (apply write-to-log  LOG-LEVEL-DEBUG    msgs ))
 
 ;----------------------------------------------------------------------
 ;
 (def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
+
+(def baseline-scores {
+      "comaker" 25 "cumulate" 9 "eruptive" 5 "factual" 9 "monadism" 8 
+      "mus" 25 "nagging" 7 "oses" 5 "remembered" 5 "spodumenes" 4 
+      "stereoisomers" 2 "toxics" 11 "trichromats" 5 "triose" 5 "uniformed" 5 } )
 
 (def all-words   
   "A collection of all words for the hangman game."
@@ -207,42 +212,45 @@
     GuessingStrategy
     (nextGuess [this hangmanGame]
       (println "GuessingStrategy.nextGuess() - enter" )
-      (println "GuessingStrategy.nextGuess() - exit"  ) 
-      (null-guess) ; return value
-    ) 
-  ))
+      (let [
+        clue       (str/lower-case (.getGuessedSoFar hangmanGame))
+          _ (println "clue" clue )
+        guessed-chars  (into #{} (.getAllGuessedLetters hangmanGame) )
+          _ (println "guessed-chars" guessed-chars )
+        word-list (words-by-length (count clue)) ; words of correct length
+          _ (show-info "word-list" word-list)
 
-(def hangmanGame (HangmanGame. "test" 20) )
+        keep-words  (filter-words clue guessed-chars word-list)
+          _ (show-info "keep-words" keep-words)
+
+        ; new-guess       (make-guess keep-words guessed-chars)
+      ]
+        (println "GuessingStrategy.nextGuess() - exit"  ) 
+        (null-guess) ; return value
+      )
+    )))
 
 (defn driver
   "Driver the java interface version of the game."
   ( [] (driver "resources/test.txt") )
   ( [test-words-filename]
+    (println)
+    (println "----------------------------------------------------------------------")
     (println "driver - enter")
+
     (let [tst-words       (->> (slurp test-words-filename)
                                (str/split-lines)
                                (map str/trim) )
           strategy        (get-strategy)
           hangmanGame     (HangmanGame. "test" 20)
-          _ (println ".nextGuess - call")
           guess           (.nextGuess strategy hangmanGame) 
-          _ (println ".nextGuess - ret")
     ]
       (println "tst-words" tst-words)
-      (println ".makeGuess - call")
       (.makeGuess guess hangmanGame) 
-      (println ".makeGuess - ret")
     )
+
     (println "driver - exit")
   ))
-
-(comment
-)
-
-(def baseline-scores {
-      "comaker" 25 "cumulate" 9 "eruptive" 5 "factual" 9 "monadism" 8 
-      "mus" 25 "nagging" 7 "oses" 5 "remembered" 5 "spodumenes" 4 
-      "stereoisomers" 2 "toxics" 11 "trichromats" 5 "triose" 5 "uniformed" 5 } )
 
 
 (defn main 
