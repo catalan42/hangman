@@ -23,7 +23,7 @@
 (def ^:const LOG-LEVEL-DEBUG    1 )
 
 (def logging-enabled           true )
-(def logging-min-level         LOG-LEVEL-DEBUG )
+(def logging-min-level         LOG-LEVEL-EXTRA )
 
 (defn write-to-log
   "Write log msg to console for debugging."
@@ -245,24 +245,30 @@
   "Driver the java interface version of the game."
   ( [] (driver "resources/test.txt") )
   ( [test-words-filename]
-    (log-extra)
-
     (let [tst-words       (->> (slurp test-words-filename)
                                (str/split-lines)
-                               (map str/trim) )
+                               (map str/trim) ) ]
+      (doseq [word tst-words]
+        (let [
           strategy        (get-strategy)
-          hangmanGame     (HangmanGame. "test" 20)
-    ]
-      (log-extra "Clue:"    (getGameClue hangmanGame) 
-               "  Status:"  (statusString hangmanGame) )
-      (while (HangmanUtils/isKeepGuessing hangmanGame)
-        (let [ guess     (.nextGuess strategy hangmanGame) ]
-          (.makeGuess guess hangmanGame)
-          (log-extra "Clue:"    (getGameClue hangmanGame) 
-                   "  Status:"  (statusString hangmanGame) )))
-    )
-    (log-extra)
-  ))
+          hangmanGame     (HangmanGame. word 20)
+        ]
+          (log-dbg)
+          (while (HangmanUtils/isKeepGuessing hangmanGame)
+            (let [ guess     (.nextGuess strategy hangmanGame) ]
+              (log-dbg "Clue:"    (format "%-20s" (getGameClue hangmanGame))
+                       "  Status:"  (statusString hangmanGame) 
+                       "  Guess:"   guess )
+              (.makeGuess guess hangmanGame)
+            ))
+          (let [finalScore (.currentScore hangmanGame)]
+            (log-msg "Clue:"          (format "%-20s" (getGameClue hangmanGame))
+                     "  Status:"      (statusString hangmanGame)
+                     "  FinalScore:"  finalScore)
+            finalScore ))
+        )
+      )
+      (log-dbg) ))
 
 (defn main 
   [] 
