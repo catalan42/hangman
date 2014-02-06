@@ -158,10 +158,11 @@
 (defn main 
   [] 
   (doseq [ tgt-word (keys baseline-scores) ]
-    (let [ num-letter-guesses   (play-hangman tgt-word) ]
-      (log-msg (str   "word:  " (format "%-15s" tgt-word) 
-                 "  guesses:  " (format "%2s" num-letter-guesses)
-                "  baseline:  " (format "%2s" (baseline-scores tgt-word)) ))))
+    (let [base-score          (baseline-scores tgt-word)
+          num-letter-guesses  (play-hangman tgt-word) ]
+      (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
+                 "  guesses:  " (format   "%2s"  num-letter-guesses)
+                "  baseline:  " (format   "%2s"  base-score) ))))
 )
 
 (defn -main [& args] (apply main args) )
