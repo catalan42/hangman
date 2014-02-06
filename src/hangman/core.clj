@@ -224,17 +224,19 @@
                                (map str/trim) )
           strategy        (get-strategy)
           hangmanGame     (HangmanGame. "test" 20)
+          _ (println ".nextGuess - call")
+          guess           (.nextGuess strategy hangmanGame) 
+          _ (println ".nextGuess - ret")
     ]
       (println "tst-words" tst-words)
-      (println ".nextGuess - call")
-      (.nextGuess strategy hangmanGame) 
-      (println ".nextGuess - ret")
+      (println ".makeGuess - call")
+      (.makeGuess guess hangmanGame) 
+      (println ".makeGuess - ret")
     )
     (println "driver - exit")
   ))
 
 (comment
-git@github.com:catalan42/hangman.git
 )
 
 (def baseline-scores {
