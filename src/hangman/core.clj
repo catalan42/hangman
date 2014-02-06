@@ -6,10 +6,10 @@
   ; Import classes from the Java "default" package.  
   (:import GuessingStrategy  Guess  GuessLetter  GuessWord  HangmanGame)
     ;********************************************************************************
-    ;* NOTE:  For some reason, class HangmanGame was not declared public (originally it had
-    ;* "package" access), despite all other classes/interfaces being public.  This caused a
-    ;* java.lang.IllegalAccessException during execution!!!  This looks like a bug in the
-    ;* demo code.
+    ; NOTE:  For some reason, class HangmanGame was not declared public (originally it had
+    ; "package" access), despite all other classes/interfaces being public.  This caused a
+    ; java.lang.IllegalAccessException during execution!!!  This looks like a bug in the
+    ; demo code.
     ;********************************************************************************
 )
 
