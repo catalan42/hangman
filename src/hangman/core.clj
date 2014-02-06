@@ -195,15 +195,13 @@
           )
         ) ))))
 
-(defn null-guess
-  "Return a Guess object instance."
-  []
-  (reify
-    Guess
-    (makeGuess [this hangmanGame]
-      (println "Guess.makeGuess() - enter" )
-      (println "Guess.makeGuess() - exit"  ) 
-    )))
+(defn statusString
+  "Return the game status as a string."
+  [hangmanGame]
+  (cond 
+    (HangmanUtils/isGameWon      hangmanGame ) "game-won"
+    (HangmanUtils/isGameLost     hangmanGame ) "game-lost"
+    (HangmanUtils/isKeepGuessing hangmanGame ) "keep-guessing" ))
 
 (defn get-strategy
   "Return a GuessingStrategy object instance."
@@ -214,19 +212,19 @@
       (println "GuessingStrategy.nextGuess() - enter" )
       (let [
         clue       (str/lower-case (.getGuessedSoFar hangmanGame))
-          _ (println "clue" clue )
+          _ (println "clue" clue "  " (statusString hangmanGame) )
         guessed-chars  (into #{} (.getAllGuessedLetters hangmanGame) )
           _ (println "guessed-chars" guessed-chars )
         word-list (words-by-length (count clue)) ; words of correct length
-          _ (show-info "word-list" word-list)
-
         keep-words  (filter-words clue guessed-chars word-list)
           _ (show-info "keep-words" keep-words)
-
-        ; new-guess       (make-guess keep-words guessed-chars)
+        new-guess  (make-guess keep-words guessed-chars)
+          _ (println "new-guess" new-guess)
+        guessLetter (GuessLetter. new-guess)
+          _ (println "guessLetter" guessLetter)
       ]
         (println "GuessingStrategy.nextGuess() - exit"  ) 
-        (null-guess) ; return value
+        guessLetter ; return value
       )
     )))
 
@@ -246,7 +244,9 @@
           guess           (.nextGuess strategy hangmanGame) 
     ]
       (println "tst-words" tst-words)
-      (.makeGuess guess hangmanGame) 
+      (.makeGuess guess hangmanGame)
+      (println "made guess" guess)
+      (println "gameStatus" (statusString hangmanGame) )
     )
 
     (println "driver - exit")
