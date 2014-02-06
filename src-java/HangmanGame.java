@@ -2,7 +2,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-class HangmanGame {
+public class HangmanGame {
   /**
    * A enum for the current state of the game
    */

@@ -3,10 +3,15 @@
     [clojure.string  :as str]
     [clojure.set     :as set]
   ) 
-  ; Import classes from the Java "default" package
+  ; Import classes from the Java "default" package.  
   (:import GuessingStrategy  Guess  GuessLetter  GuessWord  HangmanGame)
+    ;********************************************************************************
+    ;* NOTE:  For some reason, class HangmanGame was not declared public (originally it had
+    ;* "package" access), despite all other classes/interfaces being public.  This caused a
+    ;* java.lang.IllegalAccessException during execution!!!  This looks like a bug in the
+    ;* demo code.
+    ;********************************************************************************
 )
-
 
 ;----------------------------------------------------------------------
 ; Simple logging tools for demo. Replace in production
@@ -207,6 +212,8 @@
     ) 
   ))
 
+(def hangmanGame (HangmanGame. "test" 20) )
+
 (defn driver
   "Driver the java interface version of the game."
   ( [] (driver "resources/test.txt") )
@@ -217,11 +224,11 @@
             _ (println "tst-words" tst-words)
           strategy        (get-strategy)
             _ (println "built strategy")
-;         hangmanGame     (HangmanGame. "test" 20)
-;           _ (println "built hangmanGame")
+          hangmanGame    (HangmanGame. "test" 20)
+            _ (println "built hangmanGame")
     ]
       (println ".nextGuess - call")
-;     (.nextGuess strategy hangmanGame) 
+      (.nextGuess strategy hangmanGame) 
       (println ".nextGuess - ret")
     ))
 )
