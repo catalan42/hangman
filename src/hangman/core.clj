@@ -185,7 +185,9 @@
           )
         ) ))))
 
-(def null-guess
+(defn null-guess
+  "Return a Guess object instance."
+  []
   (reify
     Guess
     (makeGuess [this hangmanGame]
@@ -193,14 +195,36 @@
       (println "Guess.makeGuess() - exit"  ) 
     )))
 
-(def get-strategy
+(defn get-strategy
+  "Return a GuessingStrategy object instance."
+  []
   (reify
     GuessingStrategy
     (nextGuess [this hangmanGame]
       (println "GuessingStrategy.nextGuess() - enter" )
       (println "GuessingStrategy.nextGuess() - exit"  ) 
-      null-guess ; return value
-    )))
+      (null-guess) ; return value
+    ) 
+  ))
+
+(defn driver
+  "Driver the java interface version of the game."
+  ( [] (driver "resources/test.txt") )
+  ( [test-words-filename]
+    (let [tst-words       (->> (slurp test-words-filename)
+                               (str/split-lines)
+                               (map str/trim) )
+            _ (println "tst-words" tst-words)
+          strategy        (get-strategy)
+            _ (println "built strategy")
+;         hangmanGame     (HangmanGame. "test" 20)
+;           _ (println "built hangmanGame")
+    ]
+      (println ".nextGuess - call")
+;     (.nextGuess strategy hangmanGame) 
+      (println ".nextGuess - ret")
+    ))
+)
 
 (comment
 )
@@ -213,6 +237,9 @@
 
 (defn main 
   [] 
+  (println "driver - call")
+  (driver)
+  (println "driver - return")
   (doseq [ tgt-word (keys baseline-scores) ]
     (let [base-score          (baseline-scores tgt-word)
           num-letter-guesses  (play-hangman tgt-word) ]
