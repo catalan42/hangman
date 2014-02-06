@@ -221,12 +221,10 @@
     (let [tst-words       (->> (slurp test-words-filename)
                                (str/split-lines)
                                (map str/trim) )
-            _ (println "tst-words" tst-words)
           strategy        (get-strategy)
-            _ (println "built strategy")
-          hangmanGame    (HangmanGame. "test" 20)
-            _ (println "built hangmanGame")
+          hangmanGame     (HangmanGame. "test" 20)
     ]
+      (println "tst-words" tst-words)
       (println ".nextGuess - call")
       (.nextGuess strategy hangmanGame) 
       (println ".nextGuess - ret")
@@ -246,7 +244,7 @@
   [] 
   (println "driver - call")
   (driver)
-  (println "driver - return")
+  (println "driver - ret")
   (doseq [ tgt-word (keys baseline-scores) ]
     (let [base-score          (baseline-scores tgt-word)
           num-letter-guesses  (play-hangman tgt-word) ]
