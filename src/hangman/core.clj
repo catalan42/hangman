@@ -1,7 +1,7 @@
 (ns hangman.core
   (:require
-    [clojure.string  :as str]
-    [clojure.set     :as set]
+    [clojure.string          :as str]
+    [clojure.set             :as set]
   ) 
   ; Import classes from the Java "default" package.  
   (:import GuessingStrategy  Guess  GuessLetter  GuessWord  
