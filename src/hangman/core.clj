@@ -23,7 +23,7 @@
 (def ^:const LOG-LEVEL-DEBUG    1 )
 
 (def logging-enabled           true )
-(def logging-min-level         LOG-LEVEL-EXTRA )
+(def logging-min-level         LOG-LEVEL-NORMAL )
 
 (defn write-to-log
   "Write log msg to console for debugging."
@@ -214,45 +214,39 @@
                             (apply str )
                             (str/lower-case )
                             (set ) )
-       ]
-        
-      guessed-chars
-  ))
+  ] guessed-chars ))
 
 (defn getGameClue
   "Returns a nicely formatted clue string from the HangmanGame."
   [hangmanGame]
   (str/lower-case (.getGuessedSoFar hangmanGame)) )
 
-(defn get-strategy
+(defn new-strategy
   "Return a GuessingStrategy object instance."
   []
   (reify
     GuessingStrategy
     (nextGuess [this hangmanGame]
-      (let [
-        clue            (getGameClue hangmanGame)
-        guessed-chars   (get-game-guessed-chars hangmanGame)
-        word-list       (words-by-length (count clue)) ; words of correct length
-        keep-words      (filter-words clue guessed-chars word-list)
-        new-guess       (make-guess keep-words guessed-chars)
-      ]
-        (GuessLetter. new-guess) ; return value
-      )
-    )))
+      (let [clue            (getGameClue hangmanGame)
+            guessed-chars   (get-game-guessed-chars hangmanGame)
+            word-list       (words-by-length (count clue)) ; words of correct length
+            keep-words      (filter-words clue guessed-chars word-list) ]
+        (if (= 1 (count keep-words))
+          (GuessWord. (first keep-words)) 
+          (let [ new-guess (make-guess keep-words guessed-chars) ] 
+            (GuessLetter. new-guess) )
+        ) ))))
 
 (defn driver
   "Driver the java interface version of the game."
   ( [] (driver "resources/test.txt") )
   ( [test-words-filename]
-    (let [tst-words       (->> (slurp test-words-filename)
-                               (str/split-lines)
-                               (map str/trim) ) ]
+    (let [tst-words   (->> (slurp test-words-filename)
+                           (str/split-lines)
+                           (map str/trim) ) ]
       (doseq [word tst-words]
-        (let [
-          strategy        (get-strategy)
-          hangmanGame     (HangmanGame. word 20)
-        ]
+        (let [strategy      (new-strategy)
+              hangmanGame   (HangmanGame. word 20) ]
           (log-dbg)
           (while (HangmanUtils/isKeepGuessing hangmanGame)
             (let [ guess     (.nextGuess strategy hangmanGame) ]
