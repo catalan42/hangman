@@ -234,6 +234,7 @@
   ))
 
 (comment
+git@github.com:catalan42/hangman.git
 )
 
 (def baseline-scores {
