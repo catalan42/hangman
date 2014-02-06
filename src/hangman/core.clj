@@ -40,6 +40,28 @@
        (str/split-lines )
        (map str/trim ) ))
 
+(def words-by-length (group-by count all-words) )
+
+(def char-freqs-by-wordlen
+  "A map of character frequency maps, indexed by word length, for all-words."
+    (reduce conj {}
+      (for [curr-len (keys words-by-length) ]
+          { curr-len 
+            (frequencies (str/join (words-by-length curr-len))) } 
+      )))
+
+(comment
+  (def mm {1 :a 2 :b 3 :c 4 :d 5 :e} )
+  (def m2 (zipmap (keys mm) (map name (vals mm)) ))
+  (def m3 (reduce conj {}
+             (for [len (keys mm)] 
+               { len (name (mm len)) } )))
+
+  (doseq [len (keys char-freqs-by-wordlen)]
+    (println)
+    (println (format "%4s  =>  " len) (char-freqs-by-wordlen len) ) )
+)
+
 (def  show-info-size 8)
 (defn show-info
   "Print synopsis info about a sequence of strings"
@@ -84,11 +106,23 @@
 
 (defn make-guess
   "Choose the most common letter. Same idea as building a Huffman code."
-  [words used-chars]
-  (let [avail-chars   (set/difference all-letters used-chars)
-        char-freqs    (frequencies (str/join words))
-        best-char     (apply max-key #(get char-freqs % -1) avail-chars) ]
-    best-char ))
+  [words guessed-chars]
+  (let [
+    ; If no chars have been guessed yet, use the pre-computed frequency map. Approximately
+    ; timings for different strategies of computing char freqs are:
+    ;     3100 ms:  every time;        (= -1     (count guessed-chars))
+    ;     1400 ms:  all but 1st time;  (= 0      (count guessed-chars))
+    ;     1230 ms:  if < 10k chars;    (< 10000  (* (count words) (count (first words))) )
+    ; So, by using the precomputed char freqs on the first guess, we get a 2x gain in
+    ; execution speed and sacrifice nothing in guess accuracy. Times are for all guesses
+    ; on all 15 baseline words on HP p7-1254 (AMD A6-3620, Speed: 800 MHz, Cores: 4).
+    char-freqs    (if (= 0      (count guessed-chars))
+                    (char-freqs-by-wordlen (count (first words)) )
+                    (frequencies (str/join words)) )
+
+    avail-chars   (set/difference all-letters guessed-chars)
+    best-char     (apply max-key #(get char-freqs % -1) avail-chars) 
+  ] best-char ))
 
 (defn do-tests []
   ; Test regex stuff
@@ -123,9 +157,7 @@
   "Plays the hangman game for the supplied word.  Returns the number of letter guesses
   required to find a unique match in the master words list."
   [tgt-word]
-  (let [game-words    all-words
-        words-map     (group-by count game-words)  ; map keyed by word length
-        word-list     (words-map (count tgt-word)) ; words of correct length
+  (let [word-list (words-by-length (count tgt-word)) ; words of correct length
     ]
     (loop [ guessed-chars   #{}
             clue            (make-clue tgt-word guessed-chars) ]
@@ -165,5 +197,6 @@
                 "  baseline:  " (format   "%2s"  base-score) ))))
 )
 
-(defn -main [& args] (apply main args) )
+(defn -main [& args] 
+  (time (apply main args)) )
 
