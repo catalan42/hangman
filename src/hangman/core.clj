@@ -218,6 +218,7 @@
   "Driver the java interface version of the game."
   ( [] (driver "resources/test.txt") )
   ( [test-words-filename]
+    (println "driver - enter")
     (let [tst-words       (->> (slurp test-words-filename)
                                (str/split-lines)
                                (map str/trim) )
@@ -228,8 +229,9 @@
       (println ".nextGuess - call")
       (.nextGuess strategy hangmanGame) 
       (println ".nextGuess - ret")
-    ))
-)
+    )
+    (println "driver - exit")
+  ))
 
 (comment
 )
@@ -242,9 +244,11 @@
 
 (defn main 
   [] 
-  (println "driver - call")
   (driver)
-  (println "driver - ret")
+)
+
+(defn baseline 
+  [] 
   (doseq [ tgt-word (keys baseline-scores) ]
     (let [base-score          (baseline-scores tgt-word)
           num-letter-guesses  (play-hangman tgt-word) ]
