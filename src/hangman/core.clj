@@ -4,15 +4,35 @@
     [clojure.set     :as set]
   ) )
 
-(def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
+;----------------------------------------------------------------------
+; Simple logging tools for demo. Replace in production
+;
+(def ^:const LOG-LEVEL-ERROR    5 )
+(def ^:const LOG-LEVEL-WARN     4 )
+(def ^:const LOG-LEVEL-NORMAL   3 )
+(def ^:const LOG-LEVEL-EXTRA    2 )
+(def ^:const LOG-LEVEL-DBG      1 )
 
-(def logging-enabled true)
+(def logging-enabled           true )
+(def logging-min-level         LOG-LEVEL-NORMAL )
 
-(defn log-msg
+(defn write-to-log
   "Write log msg to console for debugging."
-  [& msgs]
-  (when logging-enabled
-    (apply println msgs)) )
+  [ level & msgs]
+  (when (and logging-enabled
+             (<= logging-min-level level) )
+    (apply println msgs ) ))
+
+; Convenience functions
+(defn log-err   [& msgs] (apply write-to-log  LOG-LEVEL-ERROR    msgs ))
+(defn log-warn  [& msgs] (apply write-to-log  LOG-LEVEL-WARN     msgs ))
+(defn log-msg   [& msgs] (apply write-to-log  LOG-LEVEL-NORMAL   msgs ))
+(defn log-extra [& msgs] (apply write-to-log  LOG-LEVEL-EXTRA    msgs ))
+(defn log-dbg   [& msgs] (apply write-to-log  LOG-LEVEL-DBG      msgs ))
+
+;----------------------------------------------------------------------
+;
+(def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
 (def all-words   
   "A collection of all words for the hangman game."
@@ -24,7 +44,7 @@
 (defn show-info
   "Print synopsis info about a sequence of strings"
   [ seqName seqVals ]
-  (log-msg 
+  (log-extra 
     (str seqName "("  (count seqVals) ") " )
         (take show-info-size (map #(str \" % \") seqVals)) ))
 
@@ -99,35 +119,50 @@
 
 (defonce test-results (do-tests) )
 
-(defn main 
-  ( [] 
-    (let [tgt-word      "stereoisomers"
-          game-words    all-words
-          words-map     (group-by count game-words)  ; map keyed by word length
-          word-list     (words-map (count tgt-word)) ; words of correct length
-      ]
-      (loop [ guessed-chars   #{}
-              clue            (make-clue tgt-word guessed-chars) ]
-        (log-msg)
-        (let [ keep-words (filter-words clue guessed-chars word-list) ]
-          (show-info "keep-words" keep-words)
-          (if (= 1 (count keep-words))
-            (let [final-guess (str/join (first keep-words)) ]
-              (log-msg (str "***** found word:  '" final-guess 
-                "'   Guesses:  " (count guessed-chars) "  *****") )
-              (log-msg "matches:" (= final-guess tgt-word)) )
-          ;else
-            (let [new-guess       (make-guess keep-words guessed-chars)
-                  guessed-chars   (conj guessed-chars new-guess)
-                  new-clue        (make-clue tgt-word guessed-chars) ]
-              (log-msg "clue: " clue "  new-guess" new-guess 
-                "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
-              (recur  (conj guessed-chars new-guess)  new-clue )
-            )
+(defn play-hangman 
+  "Plays the hangman game for the supplied word.  Returns the number of letter guesses
+  required to find a unique match in the master words list."
+  [tgt-word]
+  (let [game-words    all-words
+        words-map     (group-by count game-words)  ; map keyed by word length
+        word-list     (words-map (count tgt-word)) ; words of correct length
+    ]
+    (loop [ guessed-chars   #{}
+            clue            (make-clue tgt-word guessed-chars) ]
+      (log-extra )
+      (let [ keep-words (filter-words clue guessed-chars word-list) ]
+        (show-info "keep-words" keep-words)
+        (if (= 1 (count keep-words))
+          (let [final-guess         (str/join (first keep-words)) 
+                num-letter-guesses  (count guessed-chars) ]
+            (log-extra (str "***** found word:  '" final-guess 
+                        "'   Guesses:  " (count guessed-chars) "  *****") )
+            num-letter-guesses ; return value
           )
-        ))
+        ;else
+          (let [new-guess       (make-guess keep-words guessed-chars)
+                guessed-chars   (conj guessed-chars new-guess)
+                new-clue        (make-clue tgt-word guessed-chars) ]
+            (log-extra "clue: " clue "  new-guess" new-guess 
+              "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
+            (recur  (conj guessed-chars new-guess)  new-clue )
+          )
+        ) ))))
 
-  ))
+(def baseline-scores {
+      "comaker" 25 "cumulate" 9 "eruptive" 5 "factual" 9 "monadism" 8 
+      "mus" 25 "nagging" 7 "oses" 5 "remembered" 5 "spodumenes" 4 
+      "stereoisomers" 2 "toxics" 11 "trichromats" 5 "triose" 5 "uniformed" 5 } )
+
+
+(defn main 
+  [] 
+  (doseq [ tgt-word (keys baseline-scores) ]
+    (let [ num-letter-guesses   (play-hangman tgt-word) ]
+      (log-msg (str   "word:  " (format "%-15s" tgt-word) 
+                 "  guesses:  " (format "%2s" num-letter-guesses)
+                "  baseline:  " (format "%2s" (baseline-scores tgt-word)) ))))
 )
+
 (defn -main [& args] (apply main args) )
 
