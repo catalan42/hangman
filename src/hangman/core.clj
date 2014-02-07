@@ -45,6 +45,8 @@
 
 (def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
+(def max-wrong-guesses 5)
+
 (def baseline-scores {
       "comaker" 25 "cumulate" 9 "eruptive" 5 "factual" 9 "monadism" 8 
       "mus" 25 "nagging" 7 "oses" 5 "remembered" 5 "spodumenes" 4 
@@ -104,7 +106,8 @@
   clue and already guessed chars."
   [clue guessed-chars words]
   (let [patt-str      (clue-to-regex clue guessed-chars) 
-        keep-words    (filter  #(re-find (re-pattern patt-str) %)  words ) ]
+        re-patt       (re-pattern patt-str)  ; cache the pattern object for all words
+        keep-words    (filter #(re-find re-patt %) words ) ]
     keep-words ))
 
 (defn make-guess
@@ -118,9 +121,9 @@
     ;     1230 ms:  if < 10k chars;    (< 10000  (* (count words) (count (first words))) )
     ; So, by using the precomputed char freqs on the first guess, we get a 2x
     ; gain in execution speed and sacrifice nothing in guess accuracy. Times are
-    ; for all guesses on all 15 baseline words on HP p7-1254 (AMD A6-3620,
-    ; Speed: 800 MHz, Cores: 4).
-    char-freqs    (if (= 0      (count guessed-chars))
+    ; for all guesses on all 15 baseline words running Fedorea on HP p7-1254
+    ; (AMD A6-3620, Speed: 800 MHz, Cores: 4).
+    char-freqs    (if (= 0 (count guessed-chars))
                     (char-freqs-by-wordlen (count (first words)) )
                     (frequencies (str/join words)) )
     avail-chars   (set/difference all-letters guessed-chars)
@@ -198,9 +201,9 @@
   "Get a Clojure set of chars that have been guessed so far in the game."
   [hangmanGame]
   ; NOTE:  str/lower-case expects and returns a string. Hence we must use (apply
-  ; str ...) on the java HashSet in order to generate a single (possibly
-  ; zero-length) string before calling str/lower-case.  Since set expects a
-  ; collection, it is used without "apply".
+  ; str ...) on the java HashSet returned by hangmanGame.getAllGuessedLetters()
+  ; in order to generate a single (possibly zero-length) string before calling
+  ; str/lower-case.  Since set expects a collection, it is used without "apply".
   (let [guessed-chars  (->> (.getAllGuessedLetters hangmanGame)
                             (apply str )
                             (str/lower-case )
@@ -222,8 +225,10 @@
             guessed-chars   (get-game-guessed-chars hangmanGame)
             word-list       (words-by-length (count clue)) ; words of correct length
             keep-words      (filter-words clue guessed-chars word-list) ]
-        (if (= 1 (count keep-words))
-          (GuessWord. (first keep-words)) 
+        (if (= 1 (count keep-words))       ; if won the game
+          ; then return the winning word
+          (GuessWord. (first keep-words))  
+          ; else guess a new letter
           (let [ new-guess (make-guess keep-words guessed-chars) ] 
             (GuessLetter. new-guess) )
         ) ))))
@@ -234,56 +239,54 @@
   (log-extra)
   (while (HangmanUtils/isKeepGuessing hangmanGame)
     (let [ guess (.nextGuess strategy hangmanGame) ]
-      (log-extra "Clue:"      (format "%-20s" (getGameClue hangmanGame))
-               "  Status:"  (statusString hangmanGame) "  Guess:"   guess )
+      (log-extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
+               "  Status:"  (statusString hangmanGame) "  Guess:" guess )
       (.makeGuess guess hangmanGame)
     )
   )
   (let [score (.currentScore hangmanGame)]
-      (log-extra "Clue:"      (format "%-20s" (getGameClue hangmanGame))
-               "  Status:"  (statusString hangmanGame) "  Score"   score )
-      (log-extra)
+    (log-extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
+             "  Status:"  (statusString hangmanGame) "  Score:" score )
+    (log-extra)
     score ))
-
-(defn driver
-  "Driver the java interface version of the game."
-  ( [] (driver "resources/base-words.txt") )
-  ( [test-words-filename]
-    (log-msg)
-    (let [tst-words   (->> (slurp test-words-filename)
-                           (str/split-lines)
-                           (map str/trim) ) 
-          cumScore    (atom 0) ]
-      (doseq [word tst-words]
-        (let [strategy      (new-strategy)
-              hangmanGame   (HangmanGame. word 5) 
-              score         (play-hangman-java hangmanGame strategy) 
-        ]
-          (log-msg "Word:"      (format "%-20s" word)
-                   "Status:"    (format "%-20s" (getGameClue hangmanGame))
-                                  (statusString hangmanGame) 
-                   "Score:"     (format "%3d" score) )
-          (swap! cumScore + score) 
-        ))
-      (log-msg)
-      (log-msg "Average score:  " 
-        (format "%6.2f" (/ (double @cumScore) (count tst-words) )) )
-      (log-msg)
-    )))
-
-(defn main 
-  [] 
-  (driver)
-)
 
 (defn baseline 
   [] 
-  (doseq [ tgt-word (sort (keys baseline-scores)) ]
-    (let [base-score          (baseline-scores tgt-word)
-          num-letter-guesses  (play-hangman tgt-word) ]
-      (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
-                 "  guesses:  " (format   "%2s"  num-letter-guesses)
-                "  baseline:  " (format   "%2s"  base-score) ))))
+  (time
+    (doseq [ tgt-word (sort (keys baseline-scores)) ]
+      (let [base-score          (baseline-scores tgt-word)
+            num-letter-guesses  (play-hangman tgt-word) ]
+        (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
+                   "  guesses:  " (format   "%2s"  num-letter-guesses)
+                  "  baseline:  " (format   "%2s"  base-score) )))))
+)
+
+(defn main
+  "Driver for the java-interface version of the game."
+  ( [] (main "resources/base-words.txt") )
+  ( [words-filename]
+    (log-msg)
+    (let [words     (->> (slurp words-filename)
+                         (str/split-lines)
+                         (map str/trim) ) 
+          cumScore  (atom 0) ] 
+      (when (< 0 (count words))
+        (doseq [word words]
+          (let [strategy      (new-strategy)
+                hangmanGame   (HangmanGame. word max-wrong-guesses) 
+                score         (play-hangman-java hangmanGame strategy) 
+          ]
+            (log-msg "Word:"      (format "%-20s" word)
+                     "Status:"    (format "%-20s" (getGameClue hangmanGame))
+                                    (statusString hangmanGame) 
+                     "Score:"     (format "%3d" score) )
+            (swap! cumScore + score) 
+          ))
+        (log-msg)
+        (log-msg "Average score:  " 
+          (format "%6.2f" (/ (double @cumScore) (count words) )) )
+        (log-msg)
+      )))
 )
 
 (defn -main [& args] 
