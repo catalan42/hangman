@@ -12,6 +12,7 @@
 (def ^:const NORMAL  3 )
 (def ^:const EXTRA   2 )
 (def ^:const DEBUG   1 )
+(def ^:const TRACE   0 )
 
 (def logging-min-level  NORMAL )
 
