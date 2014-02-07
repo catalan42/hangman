@@ -237,9 +237,7 @@
             word-list       (words-by-length (count clue)) ; words of correct length
             keep-words      (filter-words clue guessed-chars word-list) ]
         (if (= 1 (count keep-words))       ; if won the game
-          ; then return the winning word
           (GuessWord. (first keep-words))  
-          ; else guess a new letter
           (let [ new-guess (make-guess keep-words guessed-chars) ] 
             (GuessLetter. new-guess) )
         ) ))))
