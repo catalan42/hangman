@@ -178,7 +178,7 @@
     ]
     (loop [ guessed-chars   #{}
             clue            (make-clue tgt-word guessed-chars) ]
-      (log-extra )
+      (log-extra)
       (let [ keep-words (filter-words clue guessed-chars word-list) ]
         (show-info "keep-words" keep-words)
         (if (= 1 (count keep-words))
@@ -242,21 +242,22 @@
 (defn play-hangman-java
   "Play the hangman game as outlined by the Java-based pseudocode."
   [ hangmanGame strategy]
-  (log-dbg)
+  (log-extra)
   (while (HangmanUtils/isKeepGuessing hangmanGame)
     (let [ guess (.nextGuess strategy hangmanGame) ]
-      (log-dbg "Clue:"      (format "%-20s" (getGameClue hangmanGame))
+      (log-extra "Clue:"      (format "%-20s" (getGameClue hangmanGame))
                "  Status:"  (statusString hangmanGame) "  Guess:"   guess )
-      (.makeGuess guess hangmanGame) ))
-  (let [finalScore (.currentScore hangmanGame)]
-    (log-msg "Clue:"          (format "%-20s" (getGameClue hangmanGame))
-             "  Status:"      (statusString hangmanGame) 
-             "  FinalScore:"  (format "%3d" finalScore) )
-    finalScore ))
+      (.makeGuess guess hangmanGame)
+    )
+  )
+  (let [score (.currentScore hangmanGame)]
+      (log-extra "Clue:"      (format "%-20s" (getGameClue hangmanGame))
+               "  Status:"  (statusString hangmanGame) "  Score"   score )
+    score ))
 
 (defn driver
   "Driver the java interface version of the game."
-  ( [] (driver "resources/test.txt") )
+  ( [] (driver "resources/base-words.txt") )
   ( [test-words-filename]
     (let [tst-words   (->> (slurp test-words-filename)
                            (str/split-lines)
@@ -265,9 +266,14 @@
       (doseq [word tst-words]
         (let [strategy      (new-strategy)
               hangmanGame   (HangmanGame. word 5) 
-              score         (play-hangman-java hangmanGame strategy) ]
-          (swap! cumScore + score) )
-      )
+              score         (play-hangman-java hangmanGame strategy) 
+        ]
+          (log-msg "Word:"        (format "%-20s" word)
+                   "  Status:"    (format "%-20s" (getGameClue hangmanGame))
+                   "  "           (statusString hangmanGame) 
+                   "  Score:"     (format "%3d" score) )
+          (swap! cumScore + score) 
+        ))
       (log-msg)
       (log-msg "Average score:  " 
         (format "%6.2f" (/ (double @cumScore) (count tst-words) )) )
