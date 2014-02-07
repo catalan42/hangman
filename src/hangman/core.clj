@@ -178,9 +178,9 @@
 (defn status-string
   "Return the HangmanGame status as a string."
     ; This function and the HangmanUtils java class are required since there
-    ; appears to be no way for Clojure to access the non-static enum
-    ; Hangman.Status using the enum symbols GAME_WON, GAME_LOST, & 
-    ; KEEP_GUESSING (rather than plain ints as used internally by javac).
+    ; appears to be no way for Clojure to access the enum Hangman.Status using
+    ; the enum symbols GAME_WON, GAME_LOST, & KEEP_GUESSING (rather than plain
+    ; ints as used internally by javac).
   [hangmanGame]
   (cond 
     (HangmanUtils/isGameWon      hangmanGame ) "game-won     "
