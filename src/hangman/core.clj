@@ -210,8 +210,8 @@
   "Get a Clojure set of chars that have been guessed so far in the game."
   [hangmanGame]
   ; NOTE:  str/lower-case expects and returns a string. Hence we must use (apply str ...)
-  ; to the java set to generate a single (possibly zero-length) string before calling
-  ; str/lower-case.  Since set expects a collection, it is used without "apply".
+  ; on the java HashSet in order to generate a single (possibly zero-length) string before
+  ; calling str/lower-case.  Since set expects a collection, it is used without "apply".
   (let [guessed-chars  (->> (.getAllGuessedLetters hangmanGame)
                             (apply str )
                             (str/lower-case )
