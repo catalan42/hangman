@@ -7,41 +7,41 @@
   (:import GuessingStrategy  Guess  GuessLetter  GuessWord  
            HangmanGame HangmanUtils )
     ;********************************************************************************
-    ; NOTE:  For some reason, class HangmanGame was not declared public (originally it had
-    ; "package" access), despite all other classes/interfaces being public.  This caused a
-    ; java.lang.IllegalAccessException during execution!!!  This looks like a bug in the
-    ; demo code.
+    ; NOTE:  For some reason, class HangmanGame was not declared public
+    ; (originally it had "package" access), despite all other classes/interfaces
+    ; being public.  This caused a java.lang.IllegalAccessException during
+    ; execution!!!  This looks like a bug in the demo code.
     ;********************************************************************************
 )
 
-;----------------------------------------------------------------------
-; Simple logging tools for demo. Replace with log4j or similar in production.
-;
-(def ^:const LOG-LEVEL-ERROR    5 )
-(def ^:const LOG-LEVEL-WARN     4 )
-(def ^:const LOG-LEVEL-NORMAL   3 )
-(def ^:const LOG-LEVEL-EXTRA    2 )
-(def ^:const LOG-LEVEL-DEBUG    1 )
-
-(def logging-enabled           true )
-(def logging-min-level         LOG-LEVEL-NORMAL )
-
-(defn write-to-log
-  "Write log msg to console for debugging."
-  [ level & msgs]
-  (when (and logging-enabled
-             (<= logging-min-level level) )
-    (apply println msgs ) ))
-
-; Convenience functions
-(defn log-error  [& msgs] (apply write-to-log  LOG-LEVEL-ERROR    msgs ))
-(defn log-warn   [& msgs] (apply write-to-log  LOG-LEVEL-WARN     msgs ))
-(defn log-msg    [& msgs] (apply write-to-log  LOG-LEVEL-NORMAL   msgs ))
-(defn log-extra  [& msgs] (apply write-to-log  LOG-LEVEL-EXTRA    msgs ))
-(defn log-dbg    [& msgs] (apply write-to-log  LOG-LEVEL-DEBUG    msgs ))
-
-; End logging tools
-;----------------------------------------------------------------------
+;********************************************************************************
+; Simple logging tools for demo. Replace with log4j or similar in production.  ;*
+;                                                                              ;*
+(def ^:const LOG-LEVEL-ERROR    5 )                                            ;*
+(def ^:const LOG-LEVEL-WARN     4 )                                            ;*
+(def ^:const LOG-LEVEL-NORMAL   3 )                                            ;*
+(def ^:const LOG-LEVEL-EXTRA    2 )                                            ;*
+(def ^:const LOG-LEVEL-DEBUG    1 )                                            ;*
+                                                                               ;*
+(def logging-enabled           true )                                          ;*
+(def logging-min-level         LOG-LEVEL-NORMAL )                              ;*
+                                                                               ;*
+(defn write-to-log                                                             ;*
+  "Write log msg to console for debugging."                                    ;*
+  [ level & msgs]                                                              ;*
+  (when (and logging-enabled                                                   ;*
+             (<= logging-min-level level) )                                    ;*
+    (apply println msgs ) ))                                                   ;*
+                                                                               ;*
+; Convenience functions                                                        ;*
+(defn log-error  [& msgs] (apply write-to-log  LOG-LEVEL-ERROR    msgs ))      ;*
+(defn log-warn   [& msgs] (apply write-to-log  LOG-LEVEL-WARN     msgs ))      ;*
+(defn log-msg    [& msgs] (apply write-to-log  LOG-LEVEL-NORMAL   msgs ))      ;*
+(defn log-extra  [& msgs] (apply write-to-log  LOG-LEVEL-EXTRA    msgs ))      ;*
+(defn log-dbg    [& msgs] (apply write-to-log  LOG-LEVEL-DEBUG    msgs ))      ;*
+                                                                               ;*
+; End logging tools                                                            ;*
+;********************************************************************************
 
 (def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
@@ -87,9 +87,9 @@
         (take show-info-size (map #(str \" % \") seqVals)) ))
 
 (defn make-clue
-  "Generate a clue given the target word and a vec of guessed letters. The clue is a
-  vector the length of the target word consisting of either letters (for correctly guessed
-  letters) or nil (for incorrect guesses)."
+  "Generate a clue given the target word and a vec of guessed letters. The clue
+  is a vector the length of the target word consisting of either letters (for
+  correctly guessed letters) or nil (for incorrect guesses)."
   [tgt-word guessed-chars]
   (str/join (for [ letter tgt-word ] (get guessed-chars letter \- ))) )
 
@@ -102,8 +102,8 @@
   ))
 
 (defn clue-to-regex
-  "Convert a clue string and set of guessed chars into a regex for filtering possible
-  matching words."
+  "Convert a clue string and set of guessed chars into a regex for filtering
+  possible matching words."
   [clue-str guessed-chars]
   (let [not-guessed-class   (complement-char-class guessed-chars)
         patt-str   (str/join
@@ -112,8 +112,8 @@
     ] patt-str ))
 
 (defn filter-words 
-  "Filter words retaining only those that are possible matches given the current clue and
-  already guessed chars."
+  "Filter words retaining only those that are possible matches given the current
+  clue and already guessed chars."
   [clue guessed-chars words]
   (let [patt-str      (clue-to-regex clue guessed-chars) 
         re-patt       (re-pattern patt-str)
@@ -124,14 +124,15 @@
   "Choose the most common letter. Same idea as building a Huffman code."
   [words guessed-chars]
   (let [
-    ; If no chars have been guessed yet, use the pre-computed frequency map. Approximately
-    ; timings for different strategies of computing char freqs are:
+    ; If no chars have been guessed yet, use the pre-computed frequency map.
+    ; Approximately timings for different strategies of computing char freqs are:
     ;     3100 ms:  every time;        (= -1     (count guessed-chars))
     ;     1400 ms:  all but 1st time;  (= 0      (count guessed-chars))
     ;     1230 ms:  if < 10k chars;    (< 10000  (* (count words) (count (first words))) )
-    ; So, by using the precomputed char freqs on the first guess, we get a 2x gain in
-    ; execution speed and sacrifice nothing in guess accuracy. Times are for all guesses
-    ; on all 15 baseline words on HP p7-1254 (AMD A6-3620, Speed: 800 MHz, Cores: 4).
+    ; So, by using the precomputed char freqs on the first guess, we get a 2x
+    ; gain in execution speed and sacrifice nothing in guess accuracy. Times are
+    ; for all guesses on all 15 baseline words on HP p7-1254 (AMD A6-3620,
+    ; Speed: 800 MHz, Cores: 4).
     char-freqs    (if (= 0      (count guessed-chars))
                     (char-freqs-by-wordlen (count (first words)) )
                     (frequencies (str/join words)) )
@@ -171,8 +172,8 @@
 (defonce test-results (do-tests) )
 
 (defn play-hangman 
-  "Plays the hangman game for the supplied word.  Returns the number of letter guesses
-  required to find a unique match in the master words list."
+  "Plays the hangman game for the supplied word.  Returns the number of letter
+  guesses required to find a unique match in the master words list."
   [tgt-word]
   (let [word-list (words-by-length (count tgt-word)) ; words of correct length
     ]
@@ -209,9 +210,10 @@
 (defn get-game-guessed-chars
   "Get a Clojure set of chars that have been guessed so far in the game."
   [hangmanGame]
-  ; NOTE:  str/lower-case expects and returns a string. Hence we must use (apply str ...)
-  ; on the java HashSet in order to generate a single (possibly zero-length) string before
-  ; calling str/lower-case.  Since set expects a collection, it is used without "apply".
+  ; NOTE:  str/lower-case expects and returns a string. Hence we must use (apply
+  ; str ...) on the java HashSet in order to generate a single (possibly
+  ; zero-length) string before calling str/lower-case.  Since set expects a
+  ; collection, it is used without "apply".
   (let [guessed-chars  (->> (.getAllGuessedLetters hangmanGame)
                             (apply str )
                             (str/lower-case )
