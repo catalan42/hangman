@@ -77,7 +77,7 @@
          (take show-info-size (map #(str \" % \") string-seq)) ))
 
 (defn make-clue
-  "Returns a clue string given the target word and a vec of guessed letters. The
+  "Returns a clue string given the target word and a set of guessed letters. The
   clue is a string the length of the target word consisting of either letters
   (for correctly guessed letters) or hyphens (for incorrect guesses)."
   [tgt-word guessed-chars]
@@ -99,7 +99,7 @@
         patt-str   (str/join
                      (for [clue-ch clue-str]
                        (if (= clue-ch \-) not-guessed-class clue-ch) ))
-    ] patt-str ))
+  ] patt-str ))
 
 (defn filter-words 
   "Filter words retaining only those that are possible matches given the current
@@ -107,8 +107,8 @@
   [clue guessed-chars words]
   (let [patt-str      (clue-to-regex clue guessed-chars) 
         re-patt       (re-pattern patt-str)  ; cache the pattern object for all words
-        keep-words    (filter #(re-find re-patt %) words ) ]
-    keep-words ))
+        keep-words    (filter #(re-find re-patt %) words ) 
+  ] keep-words ))
 
 (defn make-guess
   "Choose the most common letter. Same idea as building a Huffman code."
@@ -128,16 +128,13 @@
                     (frequencies (str/join words)) )
     avail-chars   (set/difference all-letters guessed-chars)
     best-char     (apply max-key #(get char-freqs % -1) avail-chars) 
-  ] 
-    best-char 
-  ))
+  ] best-char ))
 
 (defn do-tests []
   ; Test regex stuff
   (assert (= (complement-char-class #{})         "."      ))
   (assert (= (complement-char-class #{\a \b})    "[^ab]"  ))
   (let [words           ["abcd" "xbcd" "xxcd" "xxxd"]
-        letters         [\a \b \c \d] 
         guessed-chars   #{\b \s}
         clue-str        "-b--"
         not-char-class  (complement-char-class    guessed-chars)
@@ -161,12 +158,11 @@
 
 (defonce test-results (do-tests) )
 
-(defn play-hangman 
+(defn play-hangman-internal 
   "Plays the hangman game for the supplied word.  Returns the number of letter
   guesses required to find a unique match in the master words list."
   [tgt-word]
-  (let [word-list (words-by-length (count tgt-word)) ; words of correct length
-    ]
+  (let [ word-list (words-by-length (count tgt-word)) ]
     (loop [ guessed-chars   #{}
             clue            (make-clue tgt-word guessed-chars) ]
       (log-extra)
@@ -193,15 +189,13 @@
   [] 
   (time
     (doseq [ tgt-word (sort (keys baseline-scores)) ]
-      (let [base-score          (baseline-scores tgt-word)
-            num-letter-guesses  (play-hangman tgt-word) ]
+      (let [ num-letter-guesses  (play-hangman-internal tgt-word) ]
         (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
                    "  guesses:  " (format   "%2s"  num-letter-guesses)
-                  "  baseline:  " (format   "%2s"  base-score) )))))
-)
+                  "  baseline:  " (format   "%2s"  (baseline-scores tgt-word)) ))))))
 
 (defn statusString
-  "Return the game status as a string."
+  "Return the HangmanGame status as a string."
   [hangmanGame]
   (cond 
     (HangmanUtils/isGameWon      hangmanGame ) "game-won     "
@@ -209,12 +203,14 @@
     (HangmanUtils/isKeepGuessing hangmanGame ) "keep-guessing" ))
 
 (defn get-game-guessed-chars
-  "Get a Clojure set of chars that have been guessed so far in the game."
+  "Returns a Clojure set of chars that have been guessed so far in the
+  HangmanGame."
   [hangmanGame]
   ; NOTE:  str/lower-case expects and returns a string. Hence we must use (apply
   ; str ...) on the java HashSet returned by hangmanGame.getAllGuessedLetters()
   ; in order to generate a single (possibly zero-length) string before calling
-  ; str/lower-case.  Since set expects a collection, it is used without "apply".
+  ; str/lower-case.  Since set expects a collection, it is used instead of
+  ; (apply hash-set ...).
   (let [guessed-chars  (->> (.getAllGuessedLetters hangmanGame)
                             (apply str )
                             (str/lower-case )
@@ -227,7 +223,7 @@
   (str/lower-case (.getGuessedSoFar hangmanGame)) )
 
 (defn new-strategy
-  "Return a GuessingStrategy object instance."
+  "Returns a GuessingStrategy object instance."
   []
   (reify
     GuessingStrategy
@@ -250,9 +246,8 @@
     (let [ guess (.nextGuess strategy hangmanGame) ]
       (log-extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
                "  Status:"  (statusString hangmanGame) "  Guess:" guess )
-      (.makeGuess guess hangmanGame)
-    )
-  )
+      (.makeGuess guess hangmanGame) ))
+
   (let [score (.currentScore hangmanGame)]
     (log-extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
              "  Status:"  (statusString hangmanGame) "  Score:" score )
@@ -273,20 +268,17 @@
           (doseq [word words]
             (let [strategy      (new-strategy)
                   hangmanGame   (HangmanGame. word max-wrong-guesses) 
-                  score         (play-hangman-java hangmanGame strategy) 
-            ]
+                  score         (play-hangman-java hangmanGame strategy) ]
               (log-msg "Word:"      (format "%-20s" word)
                        "Status:"    (format "%-20s" (getGameClue hangmanGame))
-                                      (statusString hangmanGame) 
-                       "Score:"     (format "%3d" score) )
+                       (statusString hangmanGame) "Score:"     (format "%3d" score) )
               (swap! cumScore + score) 
             ))
           (log-msg)
           (log-msg "Average score:  " 
             (format "%6.2f" (/ (double @cumScore) (count words) )) )
           (log-msg)
-        ))))
-)
+        )))))
 
 (defn -main [& args] 
   (apply main args) )
