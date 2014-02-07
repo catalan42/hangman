@@ -24,7 +24,7 @@
 (def ^:const LOG-LEVEL-DEBUG    1 )
 
 (def logging-enabled           true )
-(def logging-min-level         LOG-LEVEL-DEBUG )
+(def logging-min-level         LOG-LEVEL-NORMAL )
 
 (defn write-to-log
   "Write log msg to console for debugging."
@@ -253,12 +253,14 @@
   (let [score (.currentScore hangmanGame)]
       (log-extra "Clue:"      (format "%-20s" (getGameClue hangmanGame))
                "  Status:"  (statusString hangmanGame) "  Score"   score )
+      (log-extra)
     score ))
 
 (defn driver
   "Driver the java interface version of the game."
   ( [] (driver "resources/base-words.txt") )
   ( [test-words-filename]
+    (log-msg)
     (let [tst-words   (->> (slurp test-words-filename)
                            (str/split-lines)
                            (map str/trim) ) 
@@ -268,10 +270,10 @@
               hangmanGame   (HangmanGame. word 5) 
               score         (play-hangman-java hangmanGame strategy) 
         ]
-          (log-msg "Word:"        (format "%-20s" word)
-                   "  Status:"    (format "%-20s" (getGameClue hangmanGame))
-                   "  "           (statusString hangmanGame) 
-                   "  Score:"     (format "%3d" score) )
+          (log-msg "Word:"      (format "%-20s" word)
+                   "Status:"    (format "%-20s" (getGameClue hangmanGame))
+                                  (statusString hangmanGame) 
+                   "Score:"     (format "%3d" score) )
           (swap! cumScore + score) 
         ))
       (log-msg)
