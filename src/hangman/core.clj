@@ -66,30 +66,18 @@
             (frequencies (str/join (words-by-length curr-len))) } 
       )))
 
-(comment
-  (def mm {1 :a 2 :b 3 :c 4 :d 5 :e} )
-  (def m2 (zipmap (keys mm) (map name (vals mm)) ))
-  (def m3 (reduce conj {}
-             (for [len (keys mm)] 
-               { len (name (mm len)) } )))
-
-  (doseq [len (keys char-freqs-by-wordlen)]
-    (println)
-    (println (format "%4s  =>  " len) (char-freqs-by-wordlen len) ) )
-)
-
 (def  show-info-size 8)
 (defn show-info
   "Print synopsis info about a sequence of strings"
-  [ seqName seqVals ]
+  [ doc-str string-seq ]
   (log-extra 
-    (str seqName "("  (count seqVals) ") " )
-        (take show-info-size (map #(str \" % \") seqVals)) ))
+    (str doc-str "("  (count string-seq) ") " )
+         (take show-info-size (map #(str \" % \") string-seq)) ))
 
 (defn make-clue
-  "Generate a clue given the target word and a vec of guessed letters. The clue
-  is a vector the length of the target word consisting of either letters (for
-  correctly guessed letters) or nil (for incorrect guesses)."
+  "Returns a clue string given the target word and a vec of guessed letters. The
+  clue is a string the length of the target word consisting of either letters
+  (for correctly guessed letters) or hyphens (for incorrect guesses)."
   [tgt-word guessed-chars]
   (str/join (for [ letter tgt-word ] (get guessed-chars letter \- ))) )
 
@@ -116,8 +104,7 @@
   clue and already guessed chars."
   [clue guessed-chars words]
   (let [patt-str      (clue-to-regex clue guessed-chars) 
-        re-patt       (re-pattern patt-str)
-        keep-words    (filter #(re-find re-patt %) words ) ]
+        keep-words    (filter  #(re-find (re-pattern patt-str) %)  words ) ]
     keep-words ))
 
 (defn make-guess
