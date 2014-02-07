@@ -1,7 +1,8 @@
 (ns hangman.core
   (:require
-    [clojure.string          :as str]
-    [clojure.set             :as set]
+    [clojure.string  :as str]
+    [clojure.set     :as set]
+    [hangman.log     :as log]
   ) 
   ; Import classes from the Java "default" package.  
   (:import GuessingStrategy  Guess  GuessLetter  GuessWord  
@@ -14,34 +15,7 @@
     ;********************************************************************************
 )
 
-;********************************************************************************
-; Simple logging tools for demo. Replace with log4j or similar in production.  ;*
-;                                                                              ;*
-(def ^:const LOG-LEVEL-ERROR    5 )                                            ;*
-(def ^:const LOG-LEVEL-WARN     4 )                                            ;*
-(def ^:const LOG-LEVEL-NORMAL   3 )                                            ;*
-(def ^:const LOG-LEVEL-EXTRA    2 )                                            ;*
-(def ^:const LOG-LEVEL-DEBUG    1 )                                            ;*
-                                                                               ;*
-(def logging-enabled           true )                                          ;*
-(def logging-min-level         LOG-LEVEL-NORMAL )                              ;*
-                                                                               ;*
-(defn write-to-log                                                             ;*
-  "Write log msg to console for debugging."                                    ;*
-  [ level & msgs]                                                              ;*
-  (when (and logging-enabled                                                   ;*
-             (<= logging-min-level level) )                                    ;*
-    (apply println msgs ) ))                                                   ;*
-                                                                               ;*
-; Convenience functions                                                        ;*
-(defn log-error  [& msgs] (apply write-to-log  LOG-LEVEL-ERROR    msgs ))      ;*
-(defn log-warn   [& msgs] (apply write-to-log  LOG-LEVEL-WARN     msgs ))      ;*
-(defn log-msg    [& msgs] (apply write-to-log  LOG-LEVEL-NORMAL   msgs ))      ;*
-(defn log-extra  [& msgs] (apply write-to-log  LOG-LEVEL-EXTRA    msgs ))      ;*
-(defn log-dbg    [& msgs] (apply write-to-log  LOG-LEVEL-DEBUG    msgs ))      ;*
-                                                                               ;*
-; End logging tools                                                            ;*
-;********************************************************************************
+(log/set-min-level log/NORMAL)
 
 (def ^:const all-letters (set (map char (range (int \a) (inc(int \z)) ))) )
 
@@ -72,7 +46,7 @@
 (defn show-info
   "Print synopsis info about a sequence of strings"
   [ doc-str string-seq ]
-  (log-extra 
+  (log/extra 
     (str doc-str "("  (count string-seq) ") " )
          (take show-info-size (map #(str \" % \") string-seq)) ))
 
@@ -165,13 +139,13 @@
   (let [ word-list (words-by-length (count tgt-word)) ]
     (loop [ guessed-chars   #{}
             clue            (make-clue tgt-word guessed-chars) ]
-      (log-extra)
+      (log/extra)
       (let [ keep-words (filter-words clue guessed-chars word-list) ]
         (show-info "keep-words" keep-words)
         (if (= 1 (count keep-words))
           (let [final-guess         (str/join (first keep-words)) 
                 num-letter-guesses  (count guessed-chars) ]
-            (log-extra (str "***** found word:  '" final-guess 
+            (log/extra (str "***** found word:  '" final-guess 
                         "'   Guesses:  " (count guessed-chars) "  *****") )
             num-letter-guesses ; return value
           )
@@ -179,7 +153,7 @@
           (let [new-guess       (make-guess keep-words guessed-chars)
                 guessed-chars   (conj guessed-chars new-guess)
                 new-clue        (make-clue tgt-word guessed-chars) ]
-            (log-extra "clue: " clue "  new-guess" new-guess 
+            (log/extra "clue: " clue "  new-guess" new-guess 
               "  guessed-chars (" (count guessed-chars) ")" guessed-chars)
             (recur  (conj guessed-chars new-guess)  new-clue )
           )
@@ -190,7 +164,7 @@
   (time
     (doseq [ tgt-word (sort (keys baseline-scores)) ]
       (let [ num-letter-guesses  (play-hangman-internal tgt-word) ]
-        (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
+        (log/msg (str   "word:  " (format "%-15s"  tgt-word) 
                    "  guesses:  " (format   "%2s"  num-letter-guesses)
                   "  baseline:  " (format   "%2s"  (baseline-scores tgt-word)) ))))))
 
@@ -241,24 +215,24 @@
 (defn play-hangman-java
   "Play the hangman game as outlined by the Java-based pseudocode."
   [ hangmanGame strategy]
-  (log-extra)
+  (log/extra)
   (while (HangmanUtils/isKeepGuessing hangmanGame)
     (let [ guess (.nextGuess strategy hangmanGame) ]
-      (log-extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
+      (log/extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
                "  Status:"  (statusString hangmanGame) "  Guess:" guess )
       (.makeGuess guess hangmanGame) ))
 
   (let [score (.currentScore hangmanGame)]
-    (log-extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
+    (log/extra "Clue:"    (format "%-20s" (getGameClue hangmanGame))
              "  Status:"  (statusString hangmanGame) "  Score:" score )
-    (log-extra)
+    (log/extra)
     score ))
 
 (defn main
   "Driver for the java-interface version of the game."
   ( [] (main "resources/base-words.txt") )
   ( [words-filename]
-    (log-msg)
+    (log/msg)
     (let [words     (->> (slurp words-filename)
                          (str/split-lines)
                          (map str/trim) ) 
@@ -269,15 +243,15 @@
             (let [strategy      (new-strategy)
                   hangmanGame   (HangmanGame. word max-wrong-guesses) 
                   score         (play-hangman-java hangmanGame strategy) ]
-              (log-msg "Word:"      (format "%-20s" word)
+              (log/msg "Word:"      (format "%-20s" word)
                        "Status:"    (format "%-20s" (getGameClue hangmanGame))
                        (statusString hangmanGame) "Score:"     (format "%3d" score) )
               (swap! cumScore + score) 
             ))
-          (log-msg)
-          (log-msg "Average score:  " 
+          (log/msg)
+          (log/msg "Average score:  " 
             (format "%6.2f" (/ (double @cumScore) (count words) )) )
-          (log-msg)
+          (log/msg)
         )))))
 
 (defn -main [& args] 
