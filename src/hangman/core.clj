@@ -24,7 +24,7 @@
 (def ^:const LOG-LEVEL-DEBUG    1 )
 
 (def logging-enabled           true )
-(def logging-min-level         LOG-LEVEL-NORMAL )
+(def logging-min-level         LOG-LEVEL-DEBUG )
 
 (defn write-to-log
   "Write log msg to console for debugging."
