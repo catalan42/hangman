@@ -202,8 +202,8 @@
   "Return the game status as a string."
   [hangmanGame]
   (cond 
-    (HangmanUtils/isGameWon      hangmanGame ) "game-won"
-    (HangmanUtils/isGameLost     hangmanGame ) "game-lost"
+    (HangmanUtils/isGameWon      hangmanGame ) "game-won     "
+    (HangmanUtils/isGameLost     hangmanGame ) "game-lost    "
     (HangmanUtils/isKeepGuessing hangmanGame ) "keep-guessing" ))
 
 (defn get-game-guessed-chars
@@ -239,32 +239,40 @@
             (GuessLetter. new-guess) )
         ) ))))
 
+(defn play-hangman-java
+  "Play the hangman game as outlined by the Java-based pseudocode."
+  [ hangmanGame strategy]
+  (log-dbg)
+  (while (HangmanUtils/isKeepGuessing hangmanGame)
+    (let [ guess (.nextGuess strategy hangmanGame) ]
+      (log-dbg "Clue:"      (format "%-20s" (getGameClue hangmanGame))
+               "  Status:"  (statusString hangmanGame) "  Guess:"   guess )
+      (.makeGuess guess hangmanGame) ))
+  (let [finalScore (.currentScore hangmanGame)]
+    (log-msg "Clue:"          (format "%-20s" (getGameClue hangmanGame))
+             "  Status:"      (statusString hangmanGame) 
+             "  FinalScore:"  (format "%3d" finalScore) )
+    finalScore ))
+
 (defn driver
   "Driver the java interface version of the game."
   ( [] (driver "resources/test.txt") )
   ( [test-words-filename]
     (let [tst-words   (->> (slurp test-words-filename)
                            (str/split-lines)
-                           (map str/trim) ) ]
+                           (map str/trim) ) 
+          cumScore    (atom 0) ]
       (doseq [word tst-words]
         (let [strategy      (new-strategy)
-              hangmanGame   (HangmanGame. word 20) ]
-          (log-dbg)
-          (while (HangmanUtils/isKeepGuessing hangmanGame)
-            (let [ guess     (.nextGuess strategy hangmanGame) ]
-              (log-dbg "Clue:"    (format "%-20s" (getGameClue hangmanGame))
-                       "  Status:"  (statusString hangmanGame) 
-                       "  Guess:"   guess )
-              (.makeGuess guess hangmanGame)
-            ))
-          (let [finalScore (.currentScore hangmanGame)]
-            (log-msg "Clue:"          (format "%-20s" (getGameClue hangmanGame))
-                     "  Status:"      (statusString hangmanGame)
-                     "  FinalScore:"  finalScore)
-            finalScore ))
-        )
+              hangmanGame   (HangmanGame. word 5) 
+              score         (play-hangman-java hangmanGame strategy) ]
+          (swap! cumScore + score) )
       )
-      (log-dbg) ))
+      (log-msg)
+      (log-msg "Average score:  " 
+        (format "%6.2f" (/ (double @cumScore) (count tst-words) )) )
+      (log-msg)
+    )))
 
 (defn main 
   [] 
@@ -273,7 +281,7 @@
 
 (defn baseline 
   [] 
-  (doseq [ tgt-word (keys baseline-scores) ]
+  (doseq [ tgt-word (sort (keys baseline-scores)) ]
     (let [base-score          (baseline-scores tgt-word)
           num-letter-guesses  (play-hangman tgt-word) ]
       (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
