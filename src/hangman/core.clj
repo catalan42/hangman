@@ -189,6 +189,17 @@
           )
         ) ))))
 
+(defn baseline 
+  [] 
+  (time
+    (doseq [ tgt-word (sort (keys baseline-scores)) ]
+      (let [base-score          (baseline-scores tgt-word)
+            num-letter-guesses  (play-hangman tgt-word) ]
+        (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
+                   "  guesses:  " (format   "%2s"  num-letter-guesses)
+                  "  baseline:  " (format   "%2s"  base-score) )))))
+)
+
 (defn statusString
   "Return the game status as a string."
   [hangmanGame]
@@ -250,17 +261,6 @@
     (log-extra)
     score ))
 
-(defn baseline 
-  [] 
-  (time
-    (doseq [ tgt-word (sort (keys baseline-scores)) ]
-      (let [base-score          (baseline-scores tgt-word)
-            num-letter-guesses  (play-hangman tgt-word) ]
-        (log-msg (str   "word:  " (format "%-15s"  tgt-word) 
-                   "  guesses:  " (format   "%2s"  num-letter-guesses)
-                  "  baseline:  " (format   "%2s"  base-score) )))))
-)
-
 (defn main
   "Driver for the java-interface version of the game."
   ( [] (main "resources/base-words.txt") )
@@ -270,24 +270,25 @@
                          (str/split-lines)
                          (map str/trim) ) 
           cumScore  (atom 0) ] 
-      (when (< 0 (count words))
-        (doseq [word words]
-          (let [strategy      (new-strategy)
-                hangmanGame   (HangmanGame. word max-wrong-guesses) 
-                score         (play-hangman-java hangmanGame strategy) 
-          ]
-            (log-msg "Word:"      (format "%-20s" word)
-                     "Status:"    (format "%-20s" (getGameClue hangmanGame))
-                                    (statusString hangmanGame) 
-                     "Score:"     (format "%3d" score) )
-            (swap! cumScore + score) 
-          ))
-        (log-msg)
-        (log-msg "Average score:  " 
-          (format "%6.2f" (/ (double @cumScore) (count words) )) )
-        (log-msg)
-      )))
+      (time
+        (when (< 0 (count words))
+          (doseq [word words]
+            (let [strategy      (new-strategy)
+                  hangmanGame   (HangmanGame. word max-wrong-guesses) 
+                  score         (play-hangman-java hangmanGame strategy) 
+            ]
+              (log-msg "Word:"      (format "%-20s" word)
+                       "Status:"    (format "%-20s" (getGameClue hangmanGame))
+                                      (statusString hangmanGame) 
+                       "Score:"     (format "%3d" score) )
+              (swap! cumScore + score) 
+            ))
+          (log-msg)
+          (log-msg "Average score:  " 
+            (format "%6.2f" (/ (double @cumScore) (count words) )) )
+          (log-msg)
+        ))))
 )
 
 (defn -main [& args] 
-  (time (apply main args)) )
+  (apply main args) )
